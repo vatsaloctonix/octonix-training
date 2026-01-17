@@ -105,7 +105,12 @@ export async function PATCH(request: NextRequest) {
       .eq('id', id)
       .single();
 
-    if (!section || (section.course as { created_by: string })?.created_by !== user.id) {
+    // # changed [from if (!section || (section.course as { created_by: string })?.created_by !== user.id) { to const courseData = Array.isArray(section?.course) ? section.course[0] : section?.course;]
+    const courseData = Array.isArray(section?.course) ? section.course[0] : section?.course;
+    // # changed [from if (!section || ...) { to const createdBy = courseData?.created_by;]
+    const createdBy = courseData?.created_by;
+    // # changed [from if (!section || (section.course as { created_by: string })?.created_by !== user.id) { to if (!section || createdBy !== user.id) {]
+    if (!section || createdBy !== user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -159,7 +164,12 @@ export async function DELETE(request: NextRequest) {
       .eq('id', id)
       .single();
 
-    if (!section || (section.course as { created_by: string })?.created_by !== user.id) {
+    // # changed [from if (!section || (section.course as { created_by: string })?.created_by !== user.id) { to const courseData = Array.isArray(section?.course) ? section.course[0] : section?.course;]
+    const courseData = Array.isArray(section?.course) ? section.course[0] : section?.course;
+    // # changed [from if (!section || ...) { to const createdBy = courseData?.created_by;]
+    const createdBy = courseData?.created_by;
+    // # changed [from if (!section || (section.course as { created_by: string })?.created_by !== user.id) { to if (!section || createdBy !== user.id) {]
+    if (!section || createdBy !== user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

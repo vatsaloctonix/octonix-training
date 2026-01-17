@@ -34,7 +34,12 @@ export async function POST(request: NextRequest) {
       .eq('id', section_id)
       .single();
 
-    if (!section || (section.course as { created_by: string })?.created_by !== user.id) {
+    // # changed [from if (!section || (section.course as { created_by: string })?.created_by !== user.id) { to const courseData = Array.isArray(section?.course) ? section.course[0] : section?.course;]
+    const courseData = Array.isArray(section?.course) ? section.course[0] : section?.course;
+    // # changed [from if (!section || ...) { to const createdBy = courseData?.created_by;]
+    const createdBy = courseData?.created_by;
+    // # changed [from if (!section || (section.course as { created_by: string })?.created_by !== user.id) { to if (!section || createdBy !== user.id) {]
+    if (!section || createdBy !== user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -108,7 +113,13 @@ export async function PATCH(request: NextRequest) {
       .eq('id', id)
       .single();
 
-    const createdBy = (lecture?.section as { course: { created_by: string } })?.course?.created_by;
+    // # changed [from const createdBy = (lecture?.section as { course: { created_by: string } })?.course?.created_by; to const lectureSection = Array.isArray(lecture?.section) ? lecture.section[0] : lecture?.section;]
+    const lectureSection = Array.isArray(lecture?.section) ? lecture.section[0] : lecture?.section;
+    // # changed [from const createdBy = ... to const lectureCourse = Array.isArray(lectureSection?.course) ? lectureSection.course[0] : lectureSection?.course;]
+    const lectureCourse = Array.isArray(lectureSection?.course) ? lectureSection.course[0] : lectureSection?.course;
+    // # changed [from const createdBy = ... to const createdBy = lectureCourse?.created_by;]
+    const createdBy = lectureCourse?.created_by;
+    // # changed [from if (!lecture || createdBy !== user.id) { to if (!lecture || createdBy !== user.id) {]
     if (!lecture || createdBy !== user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
@@ -166,7 +177,13 @@ export async function DELETE(request: NextRequest) {
       .eq('id', id)
       .single();
 
-    const createdBy = (lecture?.section as { course: { created_by: string } })?.course?.created_by;
+    // # changed [from const createdBy = (lecture?.section as { course: { created_by: string } })?.course?.created_by; to const lectureSection = Array.isArray(lecture?.section) ? lecture.section[0] : lecture?.section;]
+    const lectureSection = Array.isArray(lecture?.section) ? lecture.section[0] : lecture?.section;
+    // # changed [from const createdBy = ... to const lectureCourse = Array.isArray(lectureSection?.course) ? lectureSection.course[0] : lectureSection?.course;]
+    const lectureCourse = Array.isArray(lectureSection?.course) ? lectureSection.course[0] : lectureSection?.course;
+    // # changed [from const createdBy = ... to const createdBy = lectureCourse?.created_by;]
+    const createdBy = lectureCourse?.created_by;
+    // # changed [from if (!lecture || createdBy !== user.id) { to if (!lecture || createdBy !== user.id) {]
     if (!lecture || createdBy !== user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }

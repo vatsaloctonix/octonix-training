@@ -226,7 +226,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const course = (lecture.section as { course: { id: string; index_id: string } })?.course;
+    // # changed [from const course = (lecture.section as { course: { id: string; index_id: string } })?.course; to const sectionData = Array.isArray(lecture.section) ? lecture.section[0] : lecture.section;]
+    const sectionData = Array.isArray(lecture.section) ? lecture.section[0] : lecture.section;
+    // # changed [from const course = ... to const courseData = Array.isArray(sectionData?.course) ? sectionData.course[0] : sectionData?.course;]
+    const courseData = Array.isArray(sectionData?.course) ? sectionData.course[0] : sectionData?.course;
+    // # changed [from const course = ... to const course = courseData as { id: string; index_id: string } | null;]
+    const course = courseData as { id: string; index_id: string } | null;
     if (!course) {
       return NextResponse.json(
         { success: false, error: 'Lecture not linked to a course' },

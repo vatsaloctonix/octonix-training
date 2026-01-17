@@ -50,7 +50,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const course = (file.lecture as { section: { course: { id: string; index_id: string; created_by: string; is_active: boolean } } })?.section?.course;
+    // # changed [from const course = (file.lecture as { section: { course: { id: string; index_id: string; created_by: string; is_active: boolean } } })?.section?.course; to const lecture = Array.isArray(file.lecture) ? file.lecture[0] : file.lecture;]
+    const lecture = Array.isArray(file.lecture) ? file.lecture[0] : file.lecture;
+    // # changed [from const course = ... to const section = Array.isArray(lecture?.section) ? lecture.section[0] : lecture?.section;]
+    const section = Array.isArray(lecture?.section) ? lecture.section[0] : lecture?.section;
+    // # changed [from const course = ... to const courseData = Array.isArray(section?.course) ? section.course[0] : section?.course;]
+    const courseData = Array.isArray(section?.course) ? section.course[0] : section?.course;
+    // # changed [from const course = ... to const course = courseData as { id: string; index_id: string; created_by: string; is_active: boolean } | null;]
+    const course = courseData as { id: string; index_id: string; created_by: string; is_active: boolean } | null;
     if (!course) {
       return NextResponse.json(
         { success: false, error: 'File not linked to a course' },

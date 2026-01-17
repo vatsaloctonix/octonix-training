@@ -108,7 +108,8 @@ export async function POST(request: NextRequest) {
 
     // Log activity
     if (created.length > 0) {
-      await logActivity(user.id, 'bulk_created_users', 'user', null, {
+      // # changed [from await logActivity(user.id, 'bulk_created_users', 'user', null, { to await logActivity(user.id, 'bulk_created_users', 'user', undefined, {]
+      await logActivity(user.id, 'bulk_created_users', 'user', undefined, {
         count: created.length,
         role,
       });

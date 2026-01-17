@@ -35,7 +35,12 @@ export async function POST(request: NextRequest) {
       .eq('id', lectureId)
       .single();
 
-    const createdBy = (lecture?.section as { course: { created_by: string } })?.course?.created_by;
+    // # changed [from const createdBy = (lecture?.section as { course: { created_by: string } })?.course?.created_by; to const lectureSection = Array.isArray(lecture?.section) ? lecture.section[0] : lecture?.section;]
+    const lectureSection = Array.isArray(lecture?.section) ? lecture.section[0] : lecture?.section;
+    // # changed [from const createdBy = ... to const lectureCourse = Array.isArray(lectureSection?.course) ? lectureSection.course[0] : lectureSection?.course;]
+    const lectureCourse = Array.isArray(lectureSection?.course) ? lectureSection.course[0] : lectureSection?.course;
+    // # changed [from const createdBy = ... to const createdBy = lectureCourse?.created_by;]
+    const createdBy = lectureCourse?.created_by;
     if (!lecture || createdBy !== user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
@@ -121,7 +126,14 @@ export async function DELETE(request: NextRequest) {
       .eq('id', fileId)
       .single();
 
-    const createdBy = (file?.lecture as { section: { course: { created_by: string } } })?.section?.course?.created_by;
+    // # changed [from const createdBy = (file?.lecture as { section: { course: { created_by: string } } })?.section?.course?.created_by; to const fileLecture = Array.isArray(file?.lecture) ? file.lecture[0] : file?.lecture;]
+    const fileLecture = Array.isArray(file?.lecture) ? file.lecture[0] : file?.lecture;
+    // # changed [from const createdBy = ... to const fileSection = Array.isArray(fileLecture?.section) ? fileLecture.section[0] : fileLecture?.section;]
+    const fileSection = Array.isArray(fileLecture?.section) ? fileLecture.section[0] : fileLecture?.section;
+    // # changed [from const createdBy = ... to const fileCourse = Array.isArray(fileSection?.course) ? fileSection.course[0] : fileSection?.course;]
+    const fileCourse = Array.isArray(fileSection?.course) ? fileSection.course[0] : fileSection?.course;
+    // # changed [from const createdBy = ... to const createdBy = fileCourse?.created_by;]
+    const createdBy = fileCourse?.created_by;
     if (!file || createdBy !== user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
