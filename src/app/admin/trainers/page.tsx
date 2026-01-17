@@ -1,0 +1,285 @@
+/*
+ * Trainers Management Page
+ * Create, view, and manage trainer accounts
+ */
+
+'use client';
+
+import { useEffect, useState } from 'react';
+import { Header } from '@/components/layout/header';
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Modal } from '@/components/ui/modal';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Avatar } from '@/components/ui/avatar';
+import { SearchInput } from '@/components/ui/search-input';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Plus, GraduationCap, ToggleLeft, ToggleRight } from 'lucide-react';
+import { formatDate, generatePassword } from '@/lib/utils';
+
+interface Trainer {
+  id: string;
+  username: string;
+  full_name: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+export default function TrainersPage() {
+  const [trainers, setTrainers] = useState<Trainer[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [creating, setCreating] = useState(false);
+
+  // Form state
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    fetchTrainers();
+  }, []);
+
+  const fetchTrainers = async () => {
+    try {
+      const res = await fetch('/api/users?role=trainer');
+      const json = await res.json();
+      if (json.success) {
+        setTrainers(json.users);
+      }
+    } catch (error) {
+      console.error('Failed to fetch trainers:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setCreating(true);
+
+    try {
+      const res = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username,
+          password,
+          full_name: fullName,
+          role: 'trainer',
+        }),
+      });
+
+      const json = await res.json();
+
+      if (!json.success) {
+        setError(json.error);
+        setCreating(false);
+        return;
+      }
+
+      setTrainers([json.user, ...trainers]);
+      setShowModal(false);
+      resetForm();
+    } catch (err) {
+      console.error('Failed to create trainer:', err);
+      setError('Failed to create trainer');
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const toggleActive = async (trainer: Trainer) => {
+    try {
+      const res = await fetch(`/api/users/${trainer.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_active: !trainer.is_active }),
+      });
+
+      const json = await res.json();
+      if (json.success) {
+        setTrainers(trainers.map((t) =>
+          t.id === trainer.id ? { ...t, is_active: !t.is_active } : t
+        ));
+      }
+    } catch (error) {
+      console.error('Failed to toggle trainer status:', error);
+    }
+  };
+
+  const resetForm = () => {
+    setUsername('');
+    setPassword('');
+    setFullName('');
+    setError('');
+  };
+
+  const openModal = () => {
+    resetForm();
+    setPassword(generatePassword(8));
+    setShowModal(true);
+  };
+
+  const filteredTrainers = trainers.filter((t) =>
+    t.username.toLowerCase().includes(search.toLowerCase()) ||
+    t.full_name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div>
+      <Header title="Trainers" />
+
+      <div className="p-6">
+        <Card>
+          <CardHeader
+            title="Trainer Accounts"
+            description="Manage trainer accounts and their access"
+            action={
+              <Button onClick={openModal}>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Trainer
+              </Button>
+            }
+          />
+          <CardContent>
+            {/* Search */}
+            <div className="mb-4">
+              <SearchInput
+                placeholder="Search trainers..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onClear={() => setSearch('')}
+              />
+            </div>
+
+            {loading ? (
+              <div className="space-y-2">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="h-16 bg-slate-800 rounded skeleton" />
+                ))}
+              </div>
+            ) : filteredTrainers.length === 0 ? (
+              <EmptyState
+                icon={GraduationCap}
+                title="No trainers found"
+                description={search ? 'Try a different search term' : 'Create your first trainer to get started'}
+                action={!search ? { label: 'Add Trainer', onClick: openModal } : undefined}
+              />
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Trainer</TableHead>
+                    <TableHead>Username</TableHead>
+                    <TableHead>Created</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="w-20">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredTrainers.map((trainer) => (
+                    <TableRow key={trainer.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar name={trainer.full_name} size="sm" />
+                          <span className="font-medium text-white">{trainer.full_name}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-slate-400">@{trainer.username}</TableCell>
+                      <TableCell className="text-slate-400">{formatDate(trainer.created_at)}</TableCell>
+                      <TableCell>
+                        <Badge variant={trainer.is_active ? 'success' : 'danger'}>
+                          {trainer.is_active ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <button
+                          onClick={() => toggleActive(trainer)}
+                          className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+                          title={trainer.is_active ? 'Deactivate' : 'Activate'}
+                        >
+                          {trainer.is_active ? (
+                            <ToggleRight className="w-5 h-5 text-green-400" />
+                          ) : (
+                            <ToggleLeft className="w-5 h-5 text-slate-400" />
+                          )}
+                        </button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Create Trainer Modal */}
+      <Modal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        title="Create Trainer"
+      >
+        <form onSubmit={handleCreate} className="space-y-4">
+          <Input
+            id="fullName"
+            label="Full Name"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            placeholder="John Doe"
+            required
+          />
+          <Input
+            id="username"
+            label="Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+            placeholder="john_doe"
+            required
+          />
+          <div>
+            <Input
+              id="password"
+              label="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setPassword(generatePassword(8))}
+              className="text-sm text-blue-400 hover:text-blue-300 mt-1"
+            >
+              Generate new password
+            </button>
+          </div>
+
+          {error && (
+            <div className="bg-red-900/30 border border-red-800 text-red-400 px-4 py-3 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3 pt-4">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setShowModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" loading={creating}>
+              Create Trainer
+            </Button>
+          </div>
+        </form>
+      </Modal>
+    </div>
+  );
+}

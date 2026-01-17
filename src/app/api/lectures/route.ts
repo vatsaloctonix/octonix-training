@@ -1,0 +1,193 @@
+/*
+ * Lectures API Route
+ * CRUD for section lectures
+ */
+
+import { NextRequest, NextResponse } from 'next/server';
+import { createServerClient } from '@/lib/supabase';
+import { getCurrentUser, logActivity } from '@/lib/auth';
+
+// POST - Create new lecture
+export async function POST(request: NextRequest) {
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { section_id, title, description, youtube_url, order_index, duration_seconds } = body;
+
+    if (!section_id || !title?.trim()) {
+      return NextResponse.json(
+        { success: false, error: 'Section and title are required' },
+        { status: 400 }
+      );
+    }
+
+    const supabase = createServerClient();
+
+    // Verify ownership through section -> course
+    const { data: section } = await supabase
+      .from('sections')
+      .select('id, course:courses(created_by)')
+      .eq('id', section_id)
+      .single();
+
+    if (!section || (section.course as { created_by: string })?.created_by !== user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // Get max order if not provided
+    let orderIdx = order_index;
+    if (typeof orderIdx !== 'number') {
+      const { data: maxLecture } = await supabase
+        .from('lectures')
+        .select('order_index')
+        .eq('section_id', section_id)
+        .order('order_index', { ascending: false })
+        .limit(1)
+        .single();
+
+      orderIdx = maxLecture ? maxLecture.order_index + 1 : 0;
+    }
+
+    const { data: newLecture, error } = await supabase
+      .from('lectures')
+      .insert({
+        section_id,
+        title: title.trim(),
+        description: description?.trim() || null,
+        youtube_url: youtube_url?.trim() || null,
+        order_index: orderIdx,
+        duration_seconds: duration_seconds || 0,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    await logActivity(user.id, 'created_lecture', 'lecture', newLecture.id, {
+      title: newLecture.title,
+    });
+
+    return NextResponse.json({ success: true, lecture: newLecture });
+  } catch (error) {
+    console.error('Create lecture error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to create lecture' },
+      { status: 500 }
+    );
+  }
+}
+
+// PATCH - Update lecture
+export async function PATCH(request: NextRequest) {
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { id, title, description, youtube_url, order_index, duration_seconds } = body;
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: 'Lecture ID is required' },
+        { status: 400 }
+      );
+    }
+
+    const supabase = createServerClient();
+
+    // Verify ownership
+    const { data: lecture } = await supabase
+      .from('lectures')
+      .select('id, section:sections(course:courses(created_by))')
+      .eq('id', id)
+      .single();
+
+    const createdBy = (lecture?.section as { course: { created_by: string } })?.course?.created_by;
+    if (!lecture || createdBy !== user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const updates: Record<string, unknown> = {};
+    if (title) updates.title = title.trim();
+    if (description !== undefined) updates.description = description?.trim() || null;
+    if (youtube_url !== undefined) updates.youtube_url = youtube_url?.trim() || null;
+    if (typeof order_index === 'number') updates.order_index = order_index;
+    if (typeof duration_seconds === 'number') updates.duration_seconds = duration_seconds;
+
+    const { data: updatedLecture, error } = await supabase
+      .from('lectures')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return NextResponse.json({ success: true, lecture: updatedLecture });
+  } catch (error) {
+    console.error('Update lecture error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to update lecture' },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE - Delete lecture
+export async function DELETE(request: NextRequest) {
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: 'Lecture ID is required' },
+        { status: 400 }
+      );
+    }
+
+    const supabase = createServerClient();
+
+    // Verify ownership
+    const { data: lecture } = await supabase
+      .from('lectures')
+      .select('id, title, section:sections(course:courses(created_by))')
+      .eq('id', id)
+      .single();
+
+    const createdBy = (lecture?.section as { course: { created_by: string } })?.course?.created_by;
+    if (!lecture || createdBy !== user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const { error } = await supabase
+      .from('lectures')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+
+    await logActivity(user.id, 'deleted_lecture', 'lecture', id, {
+      title: lecture.title,
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Delete lecture error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to delete lecture' },
+      { status: 500 }
+    );
+  }
+}
