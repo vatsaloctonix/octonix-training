@@ -6,12 +6,12 @@
  */
 
 :root {
-  --background: #0a0f1a;
-  --foreground: #f1f5f9;
-  --primary: #2563eb;
-  --primary-dark: #1d4ed8;
-  --card-bg: #0f172a;
-  --border: #1e293b;
+  --background: #f6f7fb;
+  --foreground: #0f172a;
+  --primary: #2f5bf1;
+  --primary-dark: #2448d8;
+  --card-bg: rgba(255, 255, 255, 0.72);
+  --border: rgba(148, 163, 184, 0.35);
 }
 
 @theme inline {
@@ -22,7 +22,7 @@
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #334155 #0f172a;
+  scrollbar-color: #cbd5e1 #f1f5f9;
 }
 
 *::-webkit-scrollbar {
@@ -31,22 +31,22 @@
 }
 
 *::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: #f1f5f9;
 }
 
 *::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #cbd5e1;
   border-radius: 4px;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: #94a3b8;
 }
 
 body {
   background:
-    radial-gradient(1200px circle at 10% -10%, rgba(37, 99, 235, 0.18), transparent 45%),
-    radial-gradient(900px circle at 90% 10%, rgba(59, 130, 246, 0.12), transparent 35%),
+    radial-gradient(1200px circle at 10% -10%, rgba(47, 91, 241, 0.16), transparent 45%),
+    radial-gradient(900px circle at 90% 10%, rgba(96, 165, 250, 0.18), transparent 35%),
     var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
@@ -91,9 +91,9 @@ body {
 .skeleton {
   background: linear-gradient(
     90deg,
-    #1e293b 0%,
-    #334155 50%,
-    #1e293b 100%
+    #e2e8f0 0%,
+    #f8fafc 50%,
+    #e2e8f0 100%
   );
   background-size: 200% 100%;
   animation: skeleton-loading 1.5s infinite;

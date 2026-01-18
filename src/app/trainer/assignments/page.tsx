@@ -135,8 +135,8 @@ export default function AssignmentsPage() {
   if (loading) {
     return (
       <div className="p-6">
-        <div className="h-8 w-48 bg-slate-800 rounded skeleton mb-6" />
-        <div className="h-64 bg-slate-800 rounded-xl skeleton" />
+        <div className="h-8 w-48 bg-white/70 rounded skeleton mb-6" />
+        <div className="h-64 bg-white/70 rounded-xl skeleton" />
       </div>
     );
   }
@@ -246,7 +246,7 @@ export default function AssignmentsPage() {
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar name={candidate.full_name} size="sm" />
-                          <span className="font-medium text-white">{candidate.full_name}</span>
+                          <span className="font-medium text-slate-900">{candidate.full_name}</span>
                         </div>
                       </TableCell>
                       <TableCell className="text-slate-400">@{candidate.username}</TableCell>

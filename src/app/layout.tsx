@@ -13,8 +13,8 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: 'LearnFlow | Learning Management System',
-  description: 'Professional learning platform for trainers and candidates',
+  title: 'Octonix Consulting | Training Platform',
+  description: 'Training platform for trainers, candidates, and staff',
   icons: {
     icon: '/favicon.ico',
   },
@@ -26,8 +26,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
-      <body className={`${spaceGrotesk.variable} font-sans antialiased text-white`}>
+    <html lang="en">
+      <body className={`${spaceGrotesk.variable} font-sans antialiased text-slate-900`}>
         {children}
       </body>
     </html>

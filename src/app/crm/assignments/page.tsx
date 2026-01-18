@@ -123,7 +123,7 @@ export default function CRMAssignmentsPage() {
     : indexes.map((i) => ({ value: i.id, label: `${i.name} (${i.course_count} courses)` }));
 
   if (loading) {
-    return <div className="p-6"><div className="h-64 bg-slate-800 rounded-xl skeleton" /></div>;
+    return <div className="p-6"><div className="h-64 bg-white/70 rounded-xl skeleton" /></div>;
   }
 
   return (
@@ -199,7 +199,7 @@ export default function CRMAssignmentsPage() {
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar name={other.full_name} size="sm" />
-                          <span className="font-medium text-white">{other.full_name}</span>
+                          <span className="font-medium text-slate-900">{other.full_name}</span>
                         </div>
                       </TableCell>
                       <TableCell className="text-slate-400">@{other.username}</TableCell>

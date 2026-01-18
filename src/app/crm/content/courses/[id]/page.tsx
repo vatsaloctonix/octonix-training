@@ -227,7 +227,7 @@ export default function CRMCourseDetailPage() {
   if (loading) {
     return (
       <div className="p-6">
-        <div className="h-8 w-64 bg-slate-800 rounded skeleton mb-6" />
+        <div className="h-8 w-64 bg-white/70 rounded skeleton mb-6" />
       </div>
     );
   }
@@ -245,7 +245,7 @@ export default function CRMCourseDetailPage() {
       <Header title={course.title} />
 
       <div className="p-6">
-        <Link href="/crm/content/courses" className="inline-flex items-center gap-2 text-slate-400 hover:text-white mb-6">
+        <Link href="/crm/content/courses" className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-6">
           <ArrowLeft className="w-4 h-4" />Back to Courses
         </Link>
 
@@ -253,8 +253,8 @@ export default function CRMCourseDetailPage() {
           <CardContent className="py-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-blue-400 mb-1">{course.index_name}</p>
-                <h2 className="text-xl font-semibold text-white">{course.title}</h2>
+                <p className="text-sm text-blue-600 mb-1">{course.index_name}</p>
+                <h2 className="text-xl font-semibold text-slate-900">{course.title}</h2>
               </div>
               <Button onClick={() => openSectionModal()}>
                 <Plus className="w-4 h-4 mr-2" />Add Section
@@ -275,24 +275,24 @@ export default function CRMCourseDetailPage() {
             {course.sections.map((section, sectionIndex) => (
               <Card key={section.id}>
                 <div
-                  className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-slate-800/50"
+                  className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-slate-50"
                   onClick={() => toggleSection(section.id)}
                 >
                   <GripVertical className="w-4 h-4 text-slate-600" />
                   {expandedSections.includes(section.id) ? <ChevronDown className="w-5 h-5 text-slate-400" /> : <ChevronRight className="w-5 h-5 text-slate-400" />}
                   <div className="flex-1">
-                    <h3 className="font-medium text-white">Section {sectionIndex + 1}: {section.title}</h3>
+                    <h3 className="font-medium text-slate-900">Section {sectionIndex + 1}: {section.title}</h3>
                     <p className="text-sm text-slate-500">{section.lectures.length} lectures</p>
                   </div>
                   <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-                    <button onClick={() => openLectureModal(section.id)} className="p-2 hover:bg-slate-700 rounded-lg"><Plus className="w-4 h-4 text-blue-400" /></button>
-                    <button onClick={() => openSectionModal(section)} className="p-2 hover:bg-slate-700 rounded-lg"><Edit className="w-4 h-4 text-slate-400" /></button>
-                    <button onClick={() => handleDeleteSection(section)} className="p-2 hover:bg-slate-700 rounded-lg"><Trash2 className="w-4 h-4 text-red-400" /></button>
+                    <button onClick={() => openLectureModal(section.id)} className="p-2 hover:bg-slate-100 rounded-lg"><Plus className="w-4 h-4 text-blue-600" /></button>
+                    <button onClick={() => openSectionModal(section)} className="p-2 hover:bg-slate-100 rounded-lg"><Edit className="w-4 h-4 text-slate-400" /></button>
+                    <button onClick={() => handleDeleteSection(section)} className="p-2 hover:bg-slate-100 rounded-lg"><Trash2 className="w-4 h-4 text-red-400" /></button>
                   </div>
                 </div>
 
                 {expandedSections.includes(section.id) && (
-                  <div className="border-t border-slate-700">
+                  <div className="border-t border-slate-200/70">
                     {section.lectures.length === 0 ? (
                       <div className="px-4 py-6 text-center text-slate-500">
                         <p>No lectures</p>
@@ -303,20 +303,20 @@ export default function CRMCourseDetailPage() {
                     ) : (
                       <div className="divide-y divide-slate-700/50">
                         {section.lectures.map((lecture, lectureIndex) => (
-                          <div key={lecture.id} className="flex items-center gap-3 px-4 py-3 pl-12 hover:bg-slate-800/30">
+                          <div key={lecture.id} className="flex items-center gap-3 px-4 py-3 pl-12 hover:bg-slate-50">
                             <PlayCircle className="w-5 h-5 text-slate-500" />
                             <div className="flex-1">
-                              <p className="text-white">{sectionIndex + 1}.{lectureIndex + 1} {lecture.title}</p>
+                              <p className="text-slate-900">{sectionIndex + 1}.{lectureIndex + 1} {lecture.title}</p>
                               <div className="flex items-center gap-3 text-sm text-slate-500">
                                 {lecture.duration_seconds > 0 && <span>{formatDuration(lecture.duration_seconds)}</span>}
                                 {lecture.files.length > 0 && <span className="flex items-center gap-1"><FileText className="w-3 h-3" />{lecture.files.length} files</span>}
                               </div>
                             </div>
-                            <button onClick={() => openFilesModal(lecture)} className="p-2 hover:bg-slate-700 rounded-lg" title="Manage Files">
-                              <Upload className="w-4 h-4 text-blue-400" />
+                            <button onClick={() => openFilesModal(lecture)} className="p-2 hover:bg-slate-100 rounded-lg" title="Manage Files">
+                              <Upload className="w-4 h-4 text-blue-600" />
                             </button>
-                            <button onClick={() => openLectureModal(section.id, lecture)} className="p-2 hover:bg-slate-700 rounded-lg"><Edit className="w-4 h-4 text-slate-400" /></button>
-                            <button onClick={() => handleDeleteLecture(lecture)} className="p-2 hover:bg-slate-700 rounded-lg"><Trash2 className="w-4 h-4 text-red-400" /></button>
+                            <button onClick={() => openLectureModal(section.id, lecture)} className="p-2 hover:bg-slate-100 rounded-lg"><Edit className="w-4 h-4 text-slate-400" /></button>
+                            <button onClick={() => handleDeleteLecture(lecture)} className="p-2 hover:bg-slate-100 rounded-lg"><Trash2 className="w-4 h-4 text-red-400" /></button>
                           </div>
                         ))}
                       </div>

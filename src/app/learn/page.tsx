@@ -73,10 +73,10 @@ export default function LearnDashboardPage() {
   if (loading) {
     return (
       <div className="p-6">
-        <div className="h-8 w-48 bg-slate-800 rounded skeleton mb-6" />
+        <div className="h-8 w-48 bg-white/70 rounded skeleton mb-6" />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-32 bg-slate-800 rounded-xl skeleton" />
+            <div key={i} className="h-32 bg-white/70 rounded-xl skeleton" />
           ))}
         </div>
       </div>
@@ -149,9 +149,9 @@ export default function LearnDashboardPage() {
                       href={`/learn/course/${course.id}`}
                       className="block"
                     >
-                      <div className="bg-slate-800/50 border border-slate-700 rounded-xl overflow-hidden hover:border-blue-600/50 transition-colors group">
+                      <div className="bg-white/70 border border-white/60 rounded-2xl overflow-hidden hover:border-blue-200 transition-colors backdrop-blur-xl shadow-sm group">
                         {/* Thumbnail */}
-                        <div className="relative h-32 bg-gradient-to-br from-blue-900/50 to-slate-800 flex items-center justify-center">
+                        <div className="relative h-32 bg-gradient-to-br from-blue-100 to-white flex items-center justify-center">
                           {course.thumbnail_url ? (
                             <Image
                               src={course.thumbnail_url}
@@ -162,7 +162,7 @@ export default function LearnDashboardPage() {
                               unoptimized
                             />
                           ) : (
-                            <BookOpen className="w-12 h-12 text-slate-600 group-hover:text-blue-400 transition-colors" />
+                            <BookOpen className="w-12 h-12 text-slate-400 group-hover:text-blue-600 transition-colors" />
                           )}
 
                           {/* Completion badge */}
@@ -181,17 +181,17 @@ export default function LearnDashboardPage() {
                             {course.index_name}
                           </Badge>
 
-                          <h3 className="font-semibold text-white mb-2 line-clamp-1 group-hover:text-blue-400 transition-colors">
+                          <h3 className="font-semibold text-slate-900 mb-2 line-clamp-1 group-hover:text-blue-600 transition-colors">
                             {course.title}
                           </h3>
 
                           {/* Progress */}
                           <div className="mb-3">
                             <div className="flex items-center justify-between text-sm mb-1">
-                              <span className="text-slate-400">
+                              <span className="text-slate-600">
                                 {course.completed_lectures} / {course.lecture_count} lectures
                               </span>
-                              <span className="text-blue-400">
+                              <span className="text-blue-600">
                                 {course.completion_percentage}%
                               </span>
                             </div>

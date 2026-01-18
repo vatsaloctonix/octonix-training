@@ -31,7 +31,7 @@ export function DashboardLayout({ children, role, userName }: DashboardLayoutPro
   return (
     <div className="min-h-screen bg-transparent">
       <Sidebar role={role} userName={userName} onLogout={handleLogout} />
-      <main className="ml-64 min-h-screen bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
+      <main className="ml-64 min-h-screen bg-transparent animate-fadeIn">
         {children}
       </main>
     </div>

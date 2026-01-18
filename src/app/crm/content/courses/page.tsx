@@ -196,7 +196,7 @@ export default function CRMCoursesPage() {
             {loading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[...Array(6)].map((_, i) => (
-                  <div key={i} className="h-64 bg-slate-800 rounded-xl skeleton" />
+                  <div key={i} className="h-64 bg-white/70 rounded-xl skeleton" />
                 ))}
               </div>
             ) : indexes.length === 0 ? (
@@ -221,7 +221,7 @@ export default function CRMCoursesPage() {
                 {filteredCourses.map((course) => (
                   <div
                     key={course.id}
-                    className="bg-slate-800/50 border border-slate-700 rounded-xl overflow-hidden hover:border-slate-600 transition-colors"
+                    className="bg-white/70 border border-white/60 rounded-2xl overflow-hidden hover:border-blue-200 transition-colors backdrop-blur-xl shadow-sm"
                   >
                     <div className="relative h-32 bg-gradient-to-br from-blue-900/50 to-slate-800 flex items-center justify-center">
                       {course.thumbnail_url ? (
@@ -246,7 +246,7 @@ export default function CRMCoursesPage() {
                         </Badge>
                       </div>
 
-                      <h3 className="font-semibold text-white mb-1 line-clamp-1">{course.title}</h3>
+                      <h3 className="font-semibold text-slate-900 mb-1 line-clamp-1">{course.title}</h3>
 
                       <div className="flex items-center gap-4 text-sm text-slate-500 mb-4">
                         <span className="flex items-center gap-1">
@@ -259,17 +259,17 @@ export default function CRMCoursesPage() {
                         </span>
                       </div>
 
-                      <div className="flex gap-2 pt-3 border-t border-slate-700">
+                      <div className="flex gap-2 pt-3 border-t border-slate-200/70">
                         <Link href={`/crm/content/courses/${course.id}`} className="flex-1">
                           <Button variant="outline" className="w-full" size="sm">
                             <Eye className="w-4 h-4 mr-1" />
                             Manage
                           </Button>
                         </Link>
-                        <button onClick={() => openEditModal(course)} className="p-2 hover:bg-slate-700 rounded-lg">
+                        <button onClick={() => openEditModal(course)} className="p-2 hover:bg-slate-100 rounded-lg">
                           <Edit className="w-4 h-4 text-slate-400" />
                         </button>
-                        <button onClick={() => handleDelete(course)} className="p-2 hover:bg-slate-700 rounded-lg">
+                        <button onClick={() => handleDelete(course)} className="p-2 hover:bg-slate-100 rounded-lg">
                           <Trash2 className="w-4 h-4 text-red-400" />
                         </button>
                       </div>

@@ -23,8 +23,8 @@ export function Header({ title, showSearch, onSearch }: HeaderProps) {
   };
 
   return (
-    <header className="h-16 bg-slate-900/50 border-b border-slate-800 flex items-center justify-between px-6 sticky top-0 z-30 backdrop-blur-sm">
-      <h1 className="text-xl font-semibold text-white">{title}</h1>
+    <header className="h-16 bg-white/70 border-b border-slate-200/70 flex items-center justify-between px-6 sticky top-0 z-30 backdrop-blur-xl">
+      <h1 className="text-xl font-semibold text-slate-900">{title}</h1>
 
       <div className="flex items-center gap-4">
         {showSearch && (

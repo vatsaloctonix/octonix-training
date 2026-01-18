@@ -36,14 +36,14 @@ export function Progress({
 
   return (
     <div className={cn('w-full', className)}>
-      <div className={cn('w-full bg-slate-700 rounded-full overflow-hidden', sizes[size])}>
+      <div className={cn('w-full bg-slate-200 rounded-full overflow-hidden', sizes[size])}>
         <div
           className={cn('h-full rounded-full transition-all duration-300', getColor())}
           style={{ width: `${clampedValue}%` }}
         />
       </div>
       {showLabel && (
-        <span className="text-xs text-slate-400 mt-1 block text-right">
+        <span className="text-xs text-slate-500 mt-1 block text-right">
           {Math.round(clampedValue)}%
         </span>
       )}

@@ -230,7 +230,7 @@ export default function ReassignPage() {
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar name={candidate.full_name} size="sm" />
-                          <span className="font-medium text-white">{candidate.full_name}</span>
+                          <span className="font-medium text-slate-900">{candidate.full_name}</span>
                         </div>
                       </TableCell>
                       <TableCell className="text-slate-400">@{candidate.username}</TableCell>

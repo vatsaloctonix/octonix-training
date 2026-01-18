@@ -161,7 +161,7 @@ export default function TrainersPage() {
             {loading ? (
               <div className="space-y-2">
                 {[...Array(5)].map((_, i) => (
-                  <div key={i} className="h-16 bg-slate-800 rounded skeleton" />
+                  <div key={i} className="h-16 bg-white/70 rounded skeleton" />
                 ))}
               </div>
             ) : filteredTrainers.length === 0 ? (
@@ -188,7 +188,7 @@ export default function TrainersPage() {
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar name={trainer.full_name} size="sm" />
-                          <span className="font-medium text-white">{trainer.full_name}</span>
+                          <span className="font-medium text-slate-900">{trainer.full_name}</span>
                         </div>
                       </TableCell>
                       <TableCell className="text-slate-400">@{trainer.username}</TableCell>
@@ -201,7 +201,7 @@ export default function TrainersPage() {
                       <TableCell>
                         <button
                           onClick={() => toggleActive(trainer)}
-                          className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+                          className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
                           title={trainer.is_active ? 'Deactivate' : 'Activate'}
                         >
                           {trainer.is_active ? (
@@ -254,7 +254,7 @@ export default function TrainersPage() {
             <button
               type="button"
               onClick={() => setPassword(generatePassword(8))}
-              className="text-sm text-blue-400 hover:text-blue-300 mt-1"
+              className="text-sm text-blue-600 hover:text-blue-500 mt-1"
             >
               Generate new password
             </button>

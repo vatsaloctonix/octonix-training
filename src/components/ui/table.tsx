@@ -22,14 +22,14 @@ export function Table({ children, className }: TableProps) {
 
 export function TableHeader({ children }: { children: ReactNode }) {
   return (
-    <thead className="bg-slate-800/50 border-b border-slate-700">
+    <thead className="bg-white/60 border-b border-slate-200/70">
       {children}
     </thead>
   );
 }
 
 export function TableBody({ children }: { children: ReactNode }) {
-  return <tbody className="divide-y divide-slate-700/50">{children}</tbody>;
+  return <tbody className="divide-y divide-slate-200/70">{children}</tbody>;
 }
 
 export function TableRow({
@@ -44,7 +44,7 @@ export function TableRow({
   return (
     <tr
       className={cn(
-        'hover:bg-slate-800/30 transition-colors',
+        'hover:bg-slate-50 transition-colors',
         onClick && 'cursor-pointer',
         className
       )}
@@ -65,7 +65,7 @@ export function TableHead({
   return (
     <th
       className={cn(
-        'px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider',
+        'px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider',
         className
       )}
     >
@@ -88,7 +88,7 @@ export function TableCell({
 }: TableCellProps) {
   return (
     // changed [from td without props to td with spread props]
-    <td {...props} className={cn('px-4 py-3 text-sm text-slate-300', className)}>
+    <td {...props} className={cn('px-4 py-3 text-sm text-slate-700', className)}>
       {children}
     </td>
   );

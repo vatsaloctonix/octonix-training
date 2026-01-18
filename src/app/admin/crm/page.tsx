@@ -159,7 +159,7 @@ export default function CRMPage() {
             {loading ? (
               <div className="space-y-2">
                 {[...Array(5)].map((_, i) => (
-                  <div key={i} className="h-16 bg-slate-800 rounded skeleton" />
+                  <div key={i} className="h-16 bg-white/70 rounded skeleton" />
                 ))}
               </div>
             ) : filteredCRMs.length === 0 ? (
@@ -186,7 +186,7 @@ export default function CRMPage() {
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar name={crm.full_name} size="sm" />
-                          <span className="font-medium text-white">{crm.full_name}</span>
+                          <span className="font-medium text-slate-900">{crm.full_name}</span>
                         </div>
                       </TableCell>
                       <TableCell className="text-slate-400">@{crm.username}</TableCell>
@@ -199,7 +199,7 @@ export default function CRMPage() {
                       <TableCell>
                         <button
                           onClick={() => toggleActive(crm)}
-                          className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+                          className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
                           title={crm.is_active ? 'Deactivate' : 'Activate'}
                         >
                           {crm.is_active ? (
@@ -251,7 +251,7 @@ export default function CRMPage() {
             <button
               type="button"
               onClick={() => setPassword(generatePassword(8))}
-              className="text-sm text-blue-400 hover:text-blue-300 mt-1"
+              className="text-sm text-blue-600 hover:text-blue-500 mt-1"
             >
               Generate new password
             </button>

@@ -159,7 +159,7 @@ export default function CRMIndexesPage() {
             {loading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[...Array(6)].map((_, i) => (
-                  <div key={i} className="h-40 bg-slate-800 rounded-xl skeleton" />
+                  <div key={i} className="h-40 bg-white/70 rounded-xl skeleton" />
                 ))}
               </div>
             ) : filteredIndexes.length === 0 ? (
@@ -174,15 +174,15 @@ export default function CRMIndexesPage() {
                 {filteredIndexes.map((index) => (
                   <div
                     key={index.id}
-                    className="bg-slate-800/50 border border-slate-700 rounded-xl p-5 hover:border-slate-600 transition-colors"
+                    className="bg-white/70 border border-white/60 rounded-2xl p-5 hover:border-blue-200 transition-colors backdrop-blur-xl shadow-sm"
                   >
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-3">
                         <div className="p-2 bg-blue-900/30 rounded-lg">
-                          <FolderOpen className="w-5 h-5 text-blue-400" />
+                          <FolderOpen className="w-5 h-5 text-blue-600" />
                         </div>
                         <div>
-                          <h3 className="font-semibold text-white">{index.name}</h3>
+                          <h3 className="font-semibold text-slate-900">{index.name}</h3>
                           <p className="text-xs text-slate-500">{formatDate(index.created_at)}</p>
                         </div>
                       </div>
@@ -195,7 +195,7 @@ export default function CRMIndexesPage() {
                       <p className="text-sm text-slate-400 mb-4 line-clamp-2">{index.description}</p>
                     )}
 
-                    <div className="flex items-center justify-between pt-3 border-t border-slate-700">
+                    <div className="flex items-center justify-between pt-3 border-t border-slate-200/70">
                       <div className="flex items-center gap-1 text-sm text-slate-400">
                         <BookOpen className="w-4 h-4" />
                         <span>{index.course_count} courses</span>
@@ -203,13 +203,13 @@ export default function CRMIndexesPage() {
                       <div className="flex gap-1">
                         <button
                           onClick={() => openEditModal(index)}
-                          className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+                          className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
                         >
                           <Edit className="w-4 h-4 text-slate-400" />
                         </button>
                         <button
                           onClick={() => handleDelete(index)}
-                          className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+                          className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
                         >
                           <Trash2 className="w-4 h-4 text-red-400" />
                         </button>

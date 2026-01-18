@@ -268,10 +268,10 @@ export default function CourseDetailPage() {
   if (loading) {
     return (
       <div className="p-6">
-        <div className="h-8 w-64 bg-slate-800 rounded skeleton mb-6" />
+        <div className="h-8 w-64 bg-white/70 rounded skeleton mb-6" />
         <div className="space-y-4">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-20 bg-slate-800 rounded-xl skeleton" />
+            <div key={i} className="h-20 bg-white/70 rounded-xl skeleton" />
           ))}
         </div>
       </div>
@@ -298,7 +298,7 @@ export default function CourseDetailPage() {
         {/* Back link */}
         <Link
           href="/trainer/content/courses"
-          className="inline-flex items-center gap-2 text-slate-400 hover:text-white mb-6 transition-colors"
+          className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-6 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Courses
@@ -309,8 +309,8 @@ export default function CourseDetailPage() {
           <CardContent className="py-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-blue-400 mb-1">{course.index_name}</p>
-                <h2 className="text-xl font-semibold text-white">{course.title}</h2>
+                <p className="text-sm text-blue-600 mb-1">{course.index_name}</p>
+                <h2 className="text-xl font-semibold text-slate-900">{course.title}</h2>
                 {course.description && (
                   <p className="text-slate-400 mt-1">{course.description}</p>
                 )}
@@ -337,7 +337,7 @@ export default function CourseDetailPage() {
               <Card key={section.id}>
                 {/* Section Header */}
                 <div
-                  className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-slate-800/50 transition-colors"
+                  className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-slate-50 transition-colors"
                   onClick={() => toggleSection(section.id)}
                 >
                   <GripVertical className="w-4 h-4 text-slate-600" />
@@ -347,7 +347,7 @@ export default function CourseDetailPage() {
                     <ChevronRight className="w-5 h-5 text-slate-400" />
                   )}
                   <div className="flex-1">
-                    <h3 className="font-medium text-white">
+                    <h3 className="font-medium text-slate-900">
                       Section {sectionIndex + 1}: {section.title}
                     </h3>
                     <p className="text-sm text-slate-500">
@@ -357,21 +357,21 @@ export default function CourseDetailPage() {
                   <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
                     <button
                       onClick={() => openLectureModal(section.id)}
-                      className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+                      className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
                       title="Add Lecture"
                     >
-                      <Plus className="w-4 h-4 text-blue-400" />
+                      <Plus className="w-4 h-4 text-blue-600" />
                     </button>
                     <button
                       onClick={() => openSectionModal(section)}
-                      className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+                      className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
                       title="Edit Section"
                     >
                       <Edit className="w-4 h-4 text-slate-400" />
                     </button>
                     <button
                       onClick={() => handleDeleteSection(section)}
-                      className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+                      className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
                       title="Delete Section"
                     >
                       <Trash2 className="w-4 h-4 text-red-400" />
@@ -381,7 +381,7 @@ export default function CourseDetailPage() {
 
                 {/* Lectures */}
                 {expandedSections.includes(section.id) && (
-                  <div className="border-t border-slate-700">
+                  <div className="border-t border-slate-200/70">
                     {section.lectures.length === 0 ? (
                       <div className="px-4 py-6 text-center text-slate-500">
                         <p>No lectures in this section</p>
@@ -400,11 +400,11 @@ export default function CourseDetailPage() {
                         {section.lectures.map((lecture, lectureIndex) => (
                           <div
                             key={lecture.id}
-                            className="flex items-center gap-3 px-4 py-3 pl-12 hover:bg-slate-800/30"
+                            className="flex items-center gap-3 px-4 py-3 pl-12 hover:bg-slate-50"
                           >
                             <PlayCircle className="w-5 h-5 text-slate-500" />
                             <div className="flex-1">
-                              <p className="text-white">
+                              <p className="text-slate-900">
                                 {sectionIndex + 1}.{lectureIndex + 1} {lecture.title}
                               </p>
                               <div className="flex items-center gap-3 text-sm text-slate-500">
@@ -422,21 +422,21 @@ export default function CourseDetailPage() {
                             <div className="flex gap-1">
                               <button
                                 onClick={() => openFilesModal(lecture)}
-                                className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+                                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
                                 title="Manage Files"
                               >
-                                <Upload className="w-4 h-4 text-blue-400" />
+                                <Upload className="w-4 h-4 text-blue-600" />
                               </button>
                               <button
                                 onClick={() => openLectureModal(section.id, lecture)}
-                                className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+                                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
                                 title="Edit"
                               >
                                 <Edit className="w-4 h-4 text-slate-400" />
                               </button>
                               <button
                                 onClick={() => handleDeleteLecture(lecture)}
-                                className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+                                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
                                 title="Delete"
                               >
                                 <Trash2 className="w-4 h-4 text-red-400" />

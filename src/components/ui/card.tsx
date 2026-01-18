@@ -15,7 +15,7 @@ export function Card({ children, className }: CardProps) {
   return (
     <div
       className={cn(
-        'bg-slate-800/50 border border-slate-700 rounded-xl',
+        'bg-white/70 border border-white/60 rounded-2xl backdrop-blur-xl shadow-[0_12px_30px_rgba(15,23,42,0.08)]',
         className
       )}
     >
@@ -35,14 +35,14 @@ export function CardHeader({ title, description, action, className }: CardHeader
   return (
     <div
       className={cn(
-        'flex items-center justify-between px-6 py-4 border-b border-slate-700',
+        'flex items-center justify-between px-6 py-4 border-b border-slate-200/70',
         className
       )}
     >
       <div>
-        <h3 className="text-lg font-semibold text-white">{title}</h3>
+        <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
         {description && (
-          <p className="text-sm text-slate-400 mt-0.5">{description}</p>
+          <p className="text-sm text-slate-600 mt-0.5">{description}</p>
         )}
       </div>
       {action && <div>{action}</div>}

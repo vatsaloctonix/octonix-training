@@ -263,8 +263,8 @@ export default function CourseViewerPage() {
   if (loading) {
     return (
       <div className="p-6">
-        <div className="h-8 w-64 bg-slate-800 rounded skeleton mb-6" />
-        <div className="h-96 bg-slate-800 rounded-xl skeleton" />
+        <div className="h-8 w-64 bg-white/70 rounded skeleton mb-6" />
+        <div className="h-96 bg-white/70 rounded-xl skeleton" />
       </div>
     );
   }
@@ -289,7 +289,7 @@ export default function CourseViewerPage() {
         {/* Back link */}
         <Link
           href="/learn"
-          className="inline-flex items-center gap-2 text-slate-400 hover:text-white mb-6"
+          className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-6"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to My Learning
@@ -312,7 +312,7 @@ export default function CourseViewerPage() {
                         />
                       </div>
                     ) : (
-                      <div className="aspect-video bg-slate-800 flex items-center justify-center">
+                      <div className="aspect-video bg-slate-100 flex items-center justify-center">
                         <p className="text-slate-500">No video available</p>
                       </div>
                     )}
@@ -324,11 +324,11 @@ export default function CourseViewerPage() {
                   <CardContent className="py-4">
                     <div className="flex items-start justify-between mb-4">
                       <div>
-                        <h2 className="text-xl font-semibold text-white mb-1">
+                        <h2 className="text-xl font-semibold text-slate-900 mb-1">
                           {currentLecture.title}
                         </h2>
                         {currentLecture.duration_seconds > 0 && (
-                          <p className="text-sm text-slate-400 flex items-center gap-1">
+                          <p className="text-sm text-slate-600 flex items-center gap-1">
                             <Clock className="w-4 h-4" />
                             {formatDuration(currentLecture.duration_seconds)}
                           </p>
@@ -353,13 +353,13 @@ export default function CourseViewerPage() {
                     </div>
 
                     {currentLecture.description && (
-                      <p className="text-slate-300 mb-4">{currentLecture.description}</p>
+                      <p className="text-slate-600 mb-4">{currentLecture.description}</p>
                     )}
 
                     {/* Files */}
                     {currentLecture.files.length > 0 && (
                       <div>
-                        <h3 className="text-sm font-medium text-slate-400 mb-2">
+                        <h3 className="text-sm font-medium text-slate-600 mb-2">
                           Downloadable Files
                         </h3>
                         <div className="space-y-2">
@@ -367,11 +367,11 @@ export default function CourseViewerPage() {
                             <button
                               key={file.id}
                               onClick={() => handleDownload(file)}
-                              className="w-full flex items-center gap-3 p-3 bg-slate-700/50 rounded-lg hover:bg-slate-700 transition-colors text-left"
+                              className="w-full flex items-center gap-3 p-3 bg-white/70 border border-slate-200/70 rounded-lg hover:bg-slate-100 transition-colors backdrop-blur-sm text-left"
                             >
-                              <FileText className="w-5 h-5 text-blue-400" />
-                              <span className="flex-1 text-white">{file.file_name}</span>
-                              <Download className="w-4 h-4 text-slate-400" />
+                              <FileText className="w-5 h-5 text-blue-600" />
+                              <span className="flex-1 text-slate-900">{file.file_name}</span>
+                              <Download className="w-4 h-4 text-slate-500" />
                             </button>
                           ))}
                         </div>
@@ -400,8 +400,8 @@ export default function CourseViewerPage() {
                 {/* Progress */}
                 <div className="mb-4">
                   <div className="flex items-center justify-between text-sm mb-2">
-                    <span className="text-slate-400">Your Progress</span>
-                    <span className="text-white font-medium">{completionPercentage}%</span>
+                    <span className="text-slate-600">Your Progress</span>
+                    <span className="text-slate-900 font-medium">{completionPercentage}%</span>
                   </div>
                   <Progress value={completionPercentage} size="md" />
                   <p className="text-xs text-slate-500 mt-1">
@@ -412,17 +412,17 @@ export default function CourseViewerPage() {
                 {/* Sections */}
                 <div className="space-y-2">
                   {course.sections.map((section, sectionIndex) => (
-                    <div key={section.id} className="border border-slate-700 rounded-lg overflow-hidden">
+                    <div key={section.id} className="border border-slate-200/70 rounded-lg overflow-hidden">
                       <button
                         onClick={() => toggleSection(section.id)}
-                        className="w-full flex items-center gap-2 p-3 hover:bg-slate-800/50 transition-colors text-left"
+                        className="w-full flex items-center gap-2 p-3 hover:bg-slate-50 transition-colors text-left"
                       >
                         {expandedSections.includes(section.id) ? (
-                          <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                          <ChevronDown className="w-4 h-4 text-slate-500 flex-shrink-0" />
                         ) : (
-                          <ChevronRight className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                          <ChevronRight className="w-4 h-4 text-slate-500 flex-shrink-0" />
                         )}
-                        <span className="flex-1 text-sm font-medium text-white">
+                        <span className="flex-1 text-sm font-medium text-slate-900">
                           {sectionIndex + 1}. {section.title}
                         </span>
                         <span className="text-xs text-slate-500">
@@ -432,7 +432,7 @@ export default function CourseViewerPage() {
                       </button>
 
                       {expandedSections.includes(section.id) && (
-                        <div className="border-t border-slate-700">
+                        <div className="border-t border-slate-200/70">
                           {section.lectures.map((lecture, lectureIndex) => {
                             const isCompleted = progress.get(lecture.id)?.is_completed;
                             const isCurrent = currentLecture?.id === lecture.id;
@@ -443,12 +443,12 @@ export default function CourseViewerPage() {
                                 onClick={() => selectLecture(lecture)}
                                 className={`w-full flex items-center gap-2 p-2 pl-8 text-left transition-colors ${
                                   isCurrent
-                                    ? 'bg-blue-600/20 text-blue-400'
-                                    : 'hover:bg-slate-800/50 text-slate-300'
+                                    ? 'bg-blue-50 text-blue-700'
+                                    : 'hover:bg-slate-50 text-slate-700'
                                 }`}
                               >
                                 {isCompleted ? (
-                                  <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />
+                                  <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0" />
                                 ) : (
                                   <PlayCircle className="w-4 h-4 text-slate-500 flex-shrink-0" />
                                 )}

@@ -211,7 +211,7 @@ export default function CandidatesPage() {
             {loading ? (
               <div className="space-y-2">
                 {[...Array(5)].map((_, i) => (
-                  <div key={i} className="h-16 bg-slate-800 rounded skeleton" />
+                  <div key={i} className="h-16 bg-white/70 rounded skeleton" />
                 ))}
               </div>
             ) : filteredCandidates.length === 0 ? (
@@ -238,7 +238,7 @@ export default function CandidatesPage() {
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar name={candidate.full_name} size="sm" />
-                          <span className="font-medium text-white">{candidate.full_name}</span>
+                          <span className="font-medium text-slate-900">{candidate.full_name}</span>
                         </div>
                       </TableCell>
                       <TableCell className="text-slate-400">@{candidate.username}</TableCell>
@@ -251,7 +251,7 @@ export default function CandidatesPage() {
                       <TableCell>
                         <button
                           onClick={() => toggleActive(candidate)}
-                          className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+                          className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
                           title={candidate.is_active ? 'Deactivate' : 'Activate'}
                         >
                           {candidate.is_active ? (
@@ -300,7 +300,7 @@ export default function CandidatesPage() {
             <button
               type="button"
               onClick={() => setPassword(generatePassword(8))}
-              className="text-sm text-blue-400 hover:text-blue-300 mt-1"
+              className="text-sm text-blue-600 hover:text-blue-500 mt-1"
             >
               Generate new password
             </button>
@@ -327,7 +327,7 @@ export default function CandidatesPage() {
       <Modal isOpen={showBulkModal} onClose={() => setShowBulkModal(false)} title="Bulk Import Candidates" size="lg">
         <div className="space-y-4">
           <p className="text-sm text-slate-400">
-            Paste CSV data with format: <code className="text-blue-400">username,password,full_name</code>
+            Paste CSV data with format: <code className="text-blue-600">username,password,full_name</code>
           </p>
           <Textarea
             id="csvData"
