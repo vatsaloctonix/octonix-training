@@ -17,3 +17,4 @@ export { EmptyState } from './empty-state';
 export { SearchInput } from './search-input';
 export { Checkbox } from './checkbox';
 export { Avatar } from './avatar';
+export { InlineNotice } from './inline-notice';

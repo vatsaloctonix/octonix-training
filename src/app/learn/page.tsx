@@ -13,6 +13,7 @@ import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   BookOpen,
   PlayCircle,
@@ -83,9 +84,21 @@ export default function LearnDashboardPage() {
     );
   }
 
+  const nextCourse = data?.assigned_courses.find((course) => course.completion_percentage < 100) || null;
+
   return (
     <div>
-      <Header title="My Learning" showSearch onSearch={setSearch} />
+      <Header
+        title="Learning Hub"
+        subtitle="Pick up where you left off and keep your streak alive."
+        meta={[
+          { label: 'Streak', value: `${data?.current_streak || 0} days` },
+          { label: 'Time spent', value: formatDuration(data?.total_time_spent || 0) },
+        ]}
+        showSearch
+        onSearch={setSearch}
+        searchPlaceholder="Search courses..."
+      />
 
       <div className="p-6 space-y-6">
         {/* Stats Grid */}
@@ -121,6 +134,22 @@ export default function LearnDashboardPage() {
             description="Continue learning where you left off"
           />
           <CardContent>
+            {nextCourse && (
+              <div className="mb-6 rounded-2xl border border-blue-200/60 bg-blue-50/60 p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-blue-600">Continue learning</p>
+                  <h3 className="text-lg font-semibold text-slate-900 mt-1">{nextCourse.title}</h3>
+                  <p className="text-sm text-slate-600 mt-1">
+                    {nextCourse.completed_lectures} of {nextCourse.lecture_count} lectures completed
+                  </p>
+                </div>
+                <Link href={`/learn/course/${nextCourse.id}`}>
+                  <Button size="sm">
+                    Resume Course
+                  </Button>
+                </Link>
+              </div>
+            )}
             {(() => {
               const term = search.trim().toLowerCase();
               const courses = data?.assigned_courses || [];

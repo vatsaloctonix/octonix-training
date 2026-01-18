@@ -7,11 +7,13 @@
 
 import { useEffect, useState } from 'react';
 import { Header } from '@/components/layout/header';
+import { ActionDock } from '@/components/layout/action-dock';
 import { StatsCard } from '@/components/ui/stats-card';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Avatar } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import {
   Users,
   GraduationCap,
@@ -20,6 +22,7 @@ import {
   Activity,
 } from 'lucide-react';
 import { getRelativeTime } from '@/lib/utils';
+import Link from 'next/link';
 
 interface DashboardData {
   total_trainers: number;
@@ -104,7 +107,24 @@ export default function AdminDashboardPage() {
 
   return (
     <div>
-      <Header title="Admin Dashboard" />
+      <Header
+        title="Command Center"
+        subtitle="Oversee account health, role activity, and platform momentum."
+        meta={[{ label: 'Time zone', value: 'ET' }]}
+        actions={(
+          <ActionDock>
+            <Link href="/admin/trainers">
+              <Button size="sm">Add Trainer</Button>
+            </Link>
+            <Link href="/admin/crm">
+              <Button size="sm" variant="outline">Add CRM User</Button>
+            </Link>
+            <Link href="/admin/reassign">
+              <Button size="sm" variant="ghost">Reassign Candidates</Button>
+            </Link>
+          </ActionDock>
+        )}
+      />
 
       <div className="p-6 space-y-6">
         {/* Stats Grid */}

@@ -45,17 +45,17 @@ export function Sidebar({ role, userName, onLogout }: SidebarProps) {
     switch (role) {
       case 'admin':
         return [
-          { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-          { label: 'Trainers', href: '/admin/trainers', icon: GraduationCap },
-          { label: 'CRM Users', href: '/admin/crm', icon: UserCog },
-          { label: 'Reassign', href: '/admin/reassign', icon: ClipboardList },
+          { label: 'Command Center', href: '/admin', icon: LayoutDashboard },
+          { label: 'Trainer Stewardship', href: '/admin/trainers', icon: GraduationCap },
+          { label: 'CRM Stewardship', href: '/admin/crm', icon: UserCog },
+          { label: 'Candidate Transfer Desk', href: '/admin/reassign', icon: ClipboardList },
         ];
       case 'trainer':
         return [
-          { label: 'Dashboard', href: '/trainer', icon: LayoutDashboard },
-          { label: 'Candidates', href: '/trainer/candidates', icon: Users },
+          { label: 'Trainer Studio', href: '/trainer', icon: LayoutDashboard },
+          { label: 'Roster Command', href: '/trainer/candidates', icon: Users },
           {
-            label: 'Content',
+            label: 'Content Studio',
             href: '/trainer/content',
             icon: FolderOpen,
             children: [
@@ -63,14 +63,14 @@ export function Sidebar({ role, userName, onLogout }: SidebarProps) {
               { label: 'Courses', href: '/trainer/content/courses' },
             ],
           },
-          { label: 'Assignments', href: '/trainer/assignments', icon: ClipboardList },
+          { label: 'Assignment Orchestrator', href: '/trainer/assignments', icon: ClipboardList },
         ];
       case 'crm':
         return [
-          { label: 'Dashboard', href: '/crm', icon: LayoutDashboard },
-          { label: 'Staff Users', href: '/crm/others', icon: Users },
+          { label: 'CRM Studio', href: '/crm', icon: LayoutDashboard },
+          { label: 'Roster Command', href: '/crm/others', icon: Users },
           {
-            label: 'Content',
+            label: 'Content Studio',
             href: '/crm/content',
             icon: FolderOpen,
             children: [
@@ -78,12 +78,12 @@ export function Sidebar({ role, userName, onLogout }: SidebarProps) {
               { label: 'Courses', href: '/crm/content/courses' },
             ],
           },
-          { label: 'Assignments', href: '/crm/assignments', icon: ClipboardList },
+          { label: 'Assignment Orchestrator', href: '/crm/assignments', icon: ClipboardList },
         ];
       case 'candidate':
       case 'other':
         return [
-          { label: 'My Learning', href: '/learn', icon: BookOpen },
+          { label: 'Learning Hub', href: '/learn', icon: BookOpen },
         ];
       default:
         return [];

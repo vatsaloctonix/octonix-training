@@ -8,11 +8,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Header } from '@/components/layout/header';
+import { ActionDock } from '@/components/layout/action-dock';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Modal } from '@/components/ui/modal';
 import { EmptyState } from '@/components/ui/empty-state';
 import { LectureFilesModal } from '@/components/content/lecture-files-modal';
 import {
@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { formatDuration } from '@/lib/utils';
 import Link from 'next/link';
+import { FocusPanel } from '@/components/layout/focus-panel';
 
 interface LectureFile {
   id: string;
@@ -265,6 +266,12 @@ export default function CourseDetailPage() {
     setActiveLecture(null);
   };
 
+  const totalSections = course?.sections.length || 0;
+  const totalLectures = course?.sections.reduce((sum, section) => sum + section.lectures.length, 0) || 0;
+  const totalDuration = course?.sections
+    .flatMap((section) => section.lectures)
+    .reduce((sum, lecture) => sum + (lecture.duration_seconds || 0), 0) || 0;
+
   if (loading) {
     return (
       <div className="p-6">
@@ -292,7 +299,26 @@ export default function CourseDetailPage() {
 
   return (
     <div>
-      <Header title={course.title} />
+      <Header
+        title={course.title}
+        subtitle={course.index_name}
+        meta={[
+          { label: 'Sections', value: String(totalSections) },
+          { label: 'Lectures', value: String(totalLectures) },
+          { label: 'Duration', value: totalDuration ? formatDuration(totalDuration) : '0m' },
+        ]}
+        actions={(
+          <ActionDock>
+            <Button onClick={() => openSectionModal()} size="sm">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Section
+            </Button>
+            <Link href="/trainer/content/courses">
+              <Button size="sm" variant="ghost">Course Library</Button>
+            </Link>
+          </ActionDock>
+        )}
+      />
 
       <div className="p-6">
         {/* Back link */}
@@ -307,7 +333,7 @@ export default function CourseDetailPage() {
         {/* Course info */}
         <Card className="mb-6">
           <CardContent className="py-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>
                 <p className="text-sm text-blue-600 mb-1">{course.index_name}</p>
                 <h2 className="text-xl font-semibold text-slate-900">{course.title}</h2>
@@ -315,10 +341,11 @@ export default function CourseDetailPage() {
                   <p className="text-slate-400 mt-1">{course.description}</p>
                 )}
               </div>
-              <Button onClick={() => openSectionModal()}>
-                <Plus className="w-4 h-4 mr-2" />
-                Add Section
-              </Button>
+              <div className="flex flex-wrap gap-4 text-sm text-slate-500">
+                <span>{totalSections} sections</span>
+                <span>{totalLectures} lectures</span>
+                {totalDuration > 0 && <span>{formatDuration(totalDuration)} total</span>}
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -454,13 +481,24 @@ export default function CourseDetailPage() {
         )}
       </div>
 
-      {/* Section Modal */}
-      <Modal
+      {/* Section Panel */}
+      <FocusPanel
         isOpen={showSectionModal}
         onClose={() => setShowSectionModal(false)}
         title={editingSection ? 'Edit Section' : 'Add Section'}
+        subtitle="Sections keep lecture sequences predictable."
+        footer={(
+          <div className="flex justify-end gap-3">
+            <Button type="button" variant="ghost" onClick={() => setShowSectionModal(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" form="section-form" loading={saving}>
+              {editingSection ? 'Save Changes' : 'Add Section'}
+            </Button>
+          </div>
+        )}
       >
-        <form onSubmit={handleSaveSection} className="space-y-4">
+        <form id="section-form" onSubmit={handleSaveSection} className="space-y-4">
           <Input
             id="sectionTitle"
             label="Section Title"
@@ -475,17 +513,8 @@ export default function CourseDetailPage() {
               {error}
             </div>
           )}
-
-          <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" variant="ghost" onClick={() => setShowSectionModal(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" loading={saving}>
-              {editingSection ? 'Save Changes' : 'Add Section'}
-            </Button>
-          </div>
         </form>
-      </Modal>
+      </FocusPanel>
 
       <LectureFilesModal
         isOpen={showFilesModal}
@@ -494,14 +523,25 @@ export default function CourseDetailPage() {
         onUpdated={fetchCourse}
       />
 
-      {/* Lecture Modal */}
-      <Modal
+      {/* Lecture Panel */}
+      <FocusPanel
         isOpen={showLectureModal}
         onClose={() => setShowLectureModal(false)}
         title={editingLecture ? 'Edit Lecture' : 'Add Lecture'}
+        subtitle="Lectures are the moments learners remember."
         size="lg"
+        footer={(
+          <div className="flex justify-end gap-3">
+            <Button type="button" variant="ghost" onClick={() => setShowLectureModal(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" form="lecture-form" loading={saving}>
+              {editingLecture ? 'Save Changes' : 'Add Lecture'}
+            </Button>
+          </div>
+        )}
       >
-        <form onSubmit={handleSaveLecture} className="space-y-4">
+        <form id="lecture-form" onSubmit={handleSaveLecture} className="space-y-4">
           <Input
             id="lectureTitle"
             label="Lecture Title"
@@ -539,17 +579,8 @@ export default function CourseDetailPage() {
               {error}
             </div>
           )}
-
-          <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" variant="ghost" onClick={() => setShowLectureModal(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" loading={saving}>
-              {editingLecture ? 'Save Changes' : 'Add Lecture'}
-            </Button>
-          </div>
         </form>
-      </Modal>
+      </FocusPanel>
     </div>
   );
 }

@@ -7,16 +7,17 @@
 
 import { useEffect, useState } from 'react';
 import { Header } from '@/components/layout/header';
+import { ActionDock } from '@/components/layout/action-dock';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Modal } from '@/components/ui/modal';
-import { SearchInput } from '@/components/ui/search-input';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { Plus, FolderOpen, BookOpen, Edit, Trash2 } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
+import { FocusPanel } from '@/components/layout/focus-panel';
+import Link from 'next/link';
 
 interface Index {
   id: string;
@@ -31,7 +32,7 @@ export default function IndexesPage() {
   const [indexes, setIndexes] = useState<Index[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [showModal, setShowModal] = useState(false);
+  const [showPanel, setShowPanel] = useState(false);
   const [editingIndex, setEditingIndex] = useState<Index | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -116,7 +117,7 @@ export default function IndexesPage() {
     setName('');
     setDescription('');
     setError('');
-    setShowModal(true);
+    setShowPanel(true);
   };
 
   const openEditModal = (index: Index) => {
@@ -124,11 +125,11 @@ export default function IndexesPage() {
     setName(index.name);
     setDescription(index.description || '');
     setError('');
-    setShowModal(true);
+    setShowPanel(true);
   };
 
   const closeModal = () => {
-    setShowModal(false);
+    setShowPanel(false);
     setEditingIndex(null);
   };
 
@@ -138,30 +139,36 @@ export default function IndexesPage() {
 
   return (
     <div>
-      <Header title="Indexes" />
+      <Header
+        title="Index Catalog"
+        subtitle="Organize courses into clear learning tracks."
+        meta={[
+          { label: 'Indexes', value: String(indexes.length) },
+          { label: 'Active', value: String(indexes.filter((i) => i.is_active).length) },
+        ]}
+        showSearch
+        onSearch={setSearch}
+        searchPlaceholder="Search indexes..."
+        actions={(
+          <ActionDock>
+            <Button onClick={openCreateModal} size="sm">
+              <Plus className="w-4 h-4 mr-2" />
+              Create Index
+            </Button>
+            <Link href="/trainer/content">
+              <Button variant="ghost" size="sm">Content Studio</Button>
+            </Link>
+          </ActionDock>
+        )}
+      />
 
       <div className="p-6">
         <Card>
           <CardHeader
             title="Content Indexes"
             description="Organize your courses into categories"
-            action={
-              <Button onClick={openCreateModal}>
-                <Plus className="w-4 h-4 mr-2" />
-                Create Index
-              </Button>
-            }
           />
           <CardContent>
-            <div className="mb-6">
-              <SearchInput
-                placeholder="Search indexes..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                onClear={() => setSearch('')}
-              />
-            </div>
-
             {loading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[...Array(6)].map((_, i) => (
@@ -232,12 +239,23 @@ export default function IndexesPage() {
       </div>
 
       {/* Create/Edit Modal */}
-      <Modal
-        isOpen={showModal}
+      <FocusPanel
+        isOpen={showPanel}
         onClose={closeModal}
         title={editingIndex ? 'Edit Index' : 'Create Index'}
+        subtitle="Indexes help teams locate the right content quickly."
+        footer={(
+          <div className="flex justify-end gap-3">
+            <Button type="button" variant="ghost" onClick={closeModal}>
+              Cancel
+            </Button>
+            <Button type="submit" form="trainer-index-form" loading={saving}>
+              {editingIndex ? 'Save Changes' : 'Create Index'}
+            </Button>
+          </div>
+        )}
       >
-        <form onSubmit={handleSave} className="space-y-4">
+        <form id="trainer-index-form" onSubmit={handleSave} className="space-y-4">
           <Input
             id="name"
             label="Index Name"
@@ -260,17 +278,8 @@ export default function IndexesPage() {
               {error}
             </div>
           )}
-
-          <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" variant="ghost" onClick={closeModal}>
-              Cancel
-            </Button>
-            <Button type="submit" loading={saving}>
-              {editingIndex ? 'Save Changes' : 'Create Index'}
-            </Button>
-          </div>
         </form>
-      </Modal>
+      </FocusPanel>
     </div>
   );
 }

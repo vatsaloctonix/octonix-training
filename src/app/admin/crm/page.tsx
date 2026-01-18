@@ -10,14 +10,14 @@ import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Modal } from '@/components/ui/modal';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Avatar } from '@/components/ui/avatar';
-import { SearchInput } from '@/components/ui/search-input';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Plus, UserCog, ToggleLeft, ToggleRight } from 'lucide-react';
 import { formatDate, generatePassword } from '@/lib/utils';
+import { FocusPanel } from '@/components/layout/focus-panel';
+import { ActionDock } from '@/components/layout/action-dock';
 
 interface CRMUser {
   id: string;
@@ -31,7 +31,7 @@ export default function CRMPage() {
   const [crms, setCrms] = useState<CRMUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [showModal, setShowModal] = useState(false);
+  const [showPanel, setShowPanel] = useState(false);
   const [creating, setCreating] = useState(false);
 
   const [username, setUsername] = useState('');
@@ -83,7 +83,7 @@ export default function CRMPage() {
       }
 
       setCrms([json.user, ...crms]);
-      setShowModal(false);
+      setShowPanel(false);
       resetForm();
     } catch (err) {
       console.error('Failed to create CRM user:', err);
@@ -119,10 +119,10 @@ export default function CRMPage() {
     setError('');
   };
 
-  const openModal = () => {
+  const openPanel = () => {
     resetForm();
     setPassword(generatePassword(8));
-    setShowModal(true);
+    setShowPanel(true);
   };
 
   const filteredCRMs = crms.filter((c) =>
@@ -132,30 +132,33 @@ export default function CRMPage() {
 
   return (
     <div>
-      <Header title="CRM Users" />
+      <Header
+        title="CRM Stewardship"
+        subtitle="Manage CRM accounts and protect access."
+        meta={[
+          { label: 'Total CRM users', value: String(crms.length) },
+          { label: 'Active', value: String(crms.filter((c) => c.is_active).length) },
+        ]}
+        showSearch
+        onSearch={setSearch}
+        searchPlaceholder="Search CRM users..."
+        actions={(
+          <ActionDock>
+            <Button onClick={openPanel} size="sm">
+              <Plus className="w-4 h-4 mr-2" />
+              Add CRM User
+            </Button>
+          </ActionDock>
+        )}
+      />
 
       <div className="p-6">
         <Card>
           <CardHeader
             title="CRM Accounts"
             description="Manage CRM user accounts and their access"
-            action={
-              <Button onClick={openModal}>
-                <Plus className="w-4 h-4 mr-2" />
-                Add CRM User
-              </Button>
-            }
           />
           <CardContent>
-            <div className="mb-4">
-              <SearchInput
-                placeholder="Search CRM users..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                onClear={() => setSearch('')}
-              />
-            </div>
-
             {loading ? (
               <div className="space-y-2">
                 {[...Array(5)].map((_, i) => (
@@ -167,7 +170,7 @@ export default function CRMPage() {
                 icon={UserCog}
                 title="No CRM users found"
                 description={search ? 'Try a different search term' : 'Create your first CRM user to get started'}
-                action={!search ? { label: 'Add CRM User', onClick: openModal } : undefined}
+                action={!search ? { label: 'Add CRM User', onClick: openPanel } : undefined}
               />
             ) : (
               <Table>
@@ -218,12 +221,23 @@ export default function CRMPage() {
         </Card>
       </div>
 
-      <Modal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
+      <FocusPanel
+        isOpen={showPanel}
+        onClose={() => setShowPanel(false)}
         title="Create CRM User"
+        subtitle="Issue credentials for a CRM teammate."
+        footer={(
+          <div className="flex justify-end gap-3">
+            <Button type="button" variant="ghost" onClick={() => setShowPanel(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" form="create-crm-form" loading={creating}>
+              Create CRM User
+            </Button>
+          </div>
+        )}
       >
-        <form onSubmit={handleCreate} className="space-y-4">
+        <form id="create-crm-form" onSubmit={handleCreate} className="space-y-4">
           <Input
             id="fullName"
             label="Full Name"
@@ -262,17 +276,8 @@ export default function CRMPage() {
               {error}
             </div>
           )}
-
-          <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" variant="ghost" onClick={() => setShowModal(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" loading={creating}>
-              Create CRM User
-            </Button>
-          </div>
         </form>
-      </Modal>
+      </FocusPanel>
     </div>
   );
 }

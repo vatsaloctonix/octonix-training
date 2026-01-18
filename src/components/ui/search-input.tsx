@@ -14,14 +14,15 @@ interface SearchInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, '
 }
 
 export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
-  ({ className, value, onClear, ...props }, ref) => {
+  ({ className, value, onClear, 'aria-label': ariaLabel, ...props }, ref) => {
     return (
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
         <input
           ref={ref}
-          type="text"
+          type="search"
           value={value}
+          aria-label={ariaLabel || 'Search'}
           className={cn(
             'w-full pl-10 pr-10 py-2 bg-white/80 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 backdrop-blur-sm',
             'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent',

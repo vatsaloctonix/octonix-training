@@ -7,6 +7,7 @@
 
 import { useEffect, useState } from 'react';
 import { Header } from '@/components/layout/header';
+import { ActionDock } from '@/components/layout/action-dock';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
@@ -15,7 +16,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar } from '@/components/ui/avatar';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Badge } from '@/components/ui/badge';
-import { ClipboardList, Users } from 'lucide-react';
+import { Users } from 'lucide-react';
+import { InlineNotice } from '@/components/ui/inline-notice';
+import { SearchInput } from '@/components/ui/search-input';
+import Link from 'next/link';
 
 interface OtherUser {
   id: string;
@@ -46,7 +50,8 @@ export default function CRMAssignmentsPage() {
   const [selectedItem, setSelectedItem] = useState('');
   const [selectedOthers, setSelectedOthers] = useState<string[]>([]);
   const [assigning, setAssigning] = useState(false);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState<{ type: 'success' | 'danger'; text: string } | null>(null);
+  const [staffSearch, setStaffSearch] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -78,7 +83,7 @@ export default function CRMAssignmentsPage() {
     if (!selectedItem || selectedOthers.length === 0) return;
 
     setAssigning(true);
-    setMessage('');
+    setMessage(null);
 
     try {
       const body: Record<string, unknown> = { user_ids: selectedOthers };
@@ -94,14 +99,17 @@ export default function CRMAssignmentsPage() {
       const json = await res.json();
 
       if (json.success) {
-        setMessage(json.message || `Assigned to ${selectedOthers.length} staff members`);
+        setMessage({
+          type: 'success',
+          text: json.message || `Assigned to ${selectedOthers.length} staff members.`,
+        });
         setSelectedOthers([]);
         setSelectedItem('');
       } else {
-        setMessage(json.error || 'Assignment failed');
+        setMessage({ type: 'danger', text: json.error || 'Assignment failed.' });
       }
     } catch {
-      setMessage('Failed to create assignments');
+      setMessage({ type: 'danger', text: 'Failed to create assignments.' });
     } finally {
       setAssigning(false);
     }
@@ -113,9 +121,29 @@ export default function CRMAssignmentsPage() {
     );
   };
 
+  const visibleOthers = others.filter((other) => {
+    if (!staffSearch.trim()) return true;
+    const term = staffSearch.toLowerCase();
+    return (
+      other.username.toLowerCase().includes(term) ||
+      other.full_name.toLowerCase().includes(term)
+    );
+  });
+
+  const allVisibleSelected = visibleOthers.length > 0 &&
+    visibleOthers.every((o) => selectedOthers.includes(o.id));
+
   const toggleAll = () => {
-    if (selectedOthers.length === others.length) setSelectedOthers([]);
-    else setSelectedOthers(others.map((o) => o.id));
+    if (allVisibleSelected) {
+      setSelectedOthers((prev) =>
+        prev.filter((id) => !visibleOthers.some((o) => o.id === id))
+      );
+    } else {
+      const toAdd = visibleOthers
+        .map((o) => o.id)
+        .filter((id) => !selectedOthers.includes(id));
+      setSelectedOthers((prev) => [...prev, ...toAdd]);
+    }
   };
 
   const itemOptions = assignType === 'course'
@@ -126,9 +154,25 @@ export default function CRMAssignmentsPage() {
     return <div className="p-6"><div className="h-64 bg-white/70 rounded-xl skeleton" /></div>;
   }
 
+  const selectedLabel = itemOptions.find((item) => item.value === selectedItem)?.label || 'Not selected';
+
   return (
     <div>
-      <Header title="Assignments" />
+      <Header
+        title="Assignment Orchestrator"
+        subtitle="Assign courses or indexes in a single pass."
+        meta={[{ label: 'Active staff', value: String(others.length) }]}
+        actions={(
+          <ActionDock>
+            <Link href="/crm/others">
+              <Button size="sm" variant="outline">Roster Command</Button>
+            </Link>
+            <Link href="/crm/content">
+              <Button size="sm" variant="ghost">Content Studio</Button>
+            </Link>
+          </ActionDock>
+        )}
+      />
 
       <div className="p-6 space-y-6">
         <Card>
@@ -157,16 +201,44 @@ export default function CRMAssignmentsPage() {
             </div>
 
             {message && (
-              <div className={`mb-4 px-4 py-3 rounded-lg text-sm ${message.includes('Assigned') || message.includes('Success') ? 'bg-green-900/30 border border-green-800 text-green-400' : 'bg-red-900/30 border border-red-800 text-red-400'}`}>
-                {message}
-              </div>
+              <InlineNotice
+                variant={message.type}
+                title={message.type === 'success' ? 'Assignment confirmed' : 'Assignment blocked'}
+                message={message.text}
+                className="mb-4"
+              />
             )}
 
-            <div className="flex justify-end">
+            <div className="text-xs text-slate-500">
+              Assignments are applied immediately and keep existing learner progress intact.
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader
+            title="Assignment Preview"
+            description="Confirm scope before applying."
+            action={(
               <Button onClick={handleAssign} disabled={!selectedItem || selectedOthers.length === 0} loading={assigning}>
-                <ClipboardList className="w-4 h-4 mr-2" />
-                Assign to {selectedOthers.length} Staff
+                Assign {selectedOthers.length} Staff
               </Button>
+            )}
+          />
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-slate-600">
+              <div className="rounded-lg border border-slate-200/70 bg-white/70 px-4 py-3">
+                <p className="text-xs uppercase tracking-wide text-slate-400">Type</p>
+                <p className="text-slate-900 font-medium mt-1">{assignType === 'course' ? 'Course' : 'Index'}</p>
+              </div>
+              <div className="rounded-lg border border-slate-200/70 bg-white/70 px-4 py-3">
+                <p className="text-xs uppercase tracking-wide text-slate-400">Selected Item</p>
+                <p className="text-slate-900 font-medium mt-1">{selectedLabel}</p>
+              </div>
+              <div className="rounded-lg border border-slate-200/70 bg-white/70 px-4 py-3">
+                <p className="text-xs uppercase tracking-wide text-slate-400">Recipients</p>
+                <p className="text-slate-900 font-medium mt-1">{selectedOthers.length} staff member(s)</p>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -179,35 +251,50 @@ export default function CRMAssignmentsPage() {
                 <EmptyState icon={Users} title="No staff users" description="Create staff users first" />
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-12">
-                      <Checkbox checked={selectedOthers.length === others.length} onChange={toggleAll} />
-                    </TableHead>
-                    <TableHead>Staff User</TableHead>
-                    <TableHead>Username</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {others.map((other) => (
-                    <TableRow key={other.id}>
-                      <TableCell>
-                        <Checkbox checked={selectedOthers.includes(other.id)} onChange={() => toggleOther(other.id)} />
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar name={other.full_name} size="sm" />
-                          <span className="font-medium text-slate-900">{other.full_name}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-slate-400">@{other.username}</TableCell>
-                      <TableCell><Badge variant="success">Active</Badge></TableCell>
+              <div className="p-6 space-y-4">
+                <SearchInput
+                  placeholder="Search staff users..."
+                  value={staffSearch}
+                  onChange={(e) => setStaffSearch(e.target.value)}
+                  onClear={() => setStaffSearch('')}
+                />
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-12">
+                        <Checkbox checked={allVisibleSelected} onChange={toggleAll} />
+                      </TableHead>
+                      <TableHead>Staff User</TableHead>
+                      <TableHead>Username</TableHead>
+                      <TableHead>Status</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {visibleOthers.map((other) => (
+                      <TableRow key={other.id}>
+                        <TableCell>
+                          <Checkbox checked={selectedOthers.includes(other.id)} onChange={() => toggleOther(other.id)} />
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar name={other.full_name} size="sm" />
+                            <span className="font-medium text-slate-900">{other.full_name}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-slate-400">@{other.username}</TableCell>
+                        <TableCell><Badge variant="success">Active</Badge></TableCell>
+                      </TableRow>
+                    ))}
+                    {visibleOthers.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center text-slate-500 py-8">
+                          No matching staff users
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </CardContent>
         </Card>

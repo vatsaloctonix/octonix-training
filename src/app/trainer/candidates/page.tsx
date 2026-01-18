@@ -7,18 +7,19 @@
 
 import { useEffect, useState } from 'react';
 import { Header } from '@/components/layout/header';
+import { ActionDock } from '@/components/layout/action-dock';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Modal } from '@/components/ui/modal';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Avatar } from '@/components/ui/avatar';
-import { SearchInput } from '@/components/ui/search-input';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Plus, Users, ToggleLeft, ToggleRight, Upload } from 'lucide-react';
 import { formatDate, generatePassword, parseCSV } from '@/lib/utils';
+import { FocusPanel } from '@/components/layout/focus-panel';
+import Link from 'next/link';
 
 interface Candidate {
   id: string;
@@ -32,8 +33,8 @@ export default function CandidatesPage() {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [showModal, setShowModal] = useState(false);
-  const [showBulkModal, setShowBulkModal] = useState(false);
+  const [showCreatePanel, setShowCreatePanel] = useState(false);
+  const [showBulkPanel, setShowBulkPanel] = useState(false);
   const [creating, setCreating] = useState(false);
 
   // Single create form
@@ -90,7 +91,7 @@ export default function CandidatesPage() {
       }
 
       setCandidates([json.user, ...candidates]);
-      setShowModal(false);
+      setShowCreatePanel(false);
       resetForm();
     } catch (err) {
       console.error('Failed to create candidate:', err);
@@ -158,17 +159,17 @@ export default function CandidatesPage() {
     setError('');
   };
 
-  const openModal = () => {
+  const openCreatePanel = () => {
     resetForm();
     setPassword(generatePassword(8));
-    setShowModal(true);
+    setShowCreatePanel(true);
   };
 
-  const openBulkModal = () => {
+  const openBulkPanel = () => {
     setCsvData('');
     setBulkResults([]);
     setError('');
-    setShowBulkModal(true);
+    setShowBulkPanel(true);
   };
 
   const filteredCandidates = candidates.filter((c) =>
@@ -178,36 +179,40 @@ export default function CandidatesPage() {
 
   return (
     <div>
-      <Header title="Candidates" />
+      <Header
+        title="Roster Command"
+        subtitle="Create candidates quickly and keep access tidy."
+        meta={[
+          { label: 'Total candidates', value: String(candidates.length) },
+          { label: 'Active', value: String(candidates.filter((c) => c.is_active).length) },
+        ]}
+        showSearch
+        onSearch={setSearch}
+        searchPlaceholder="Search candidates..."
+        actions={(
+          <ActionDock>
+            <Button variant="outline" onClick={openBulkPanel} size="sm">
+              <Upload className="w-4 h-4 mr-2" />
+              Bulk Import
+            </Button>
+            <Button onClick={openCreatePanel} size="sm">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Candidate
+            </Button>
+            <Link href="/trainer/assignments">
+              <Button variant="ghost" size="sm">Assign Content</Button>
+            </Link>
+          </ActionDock>
+        )}
+      />
 
       <div className="p-6">
         <Card>
           <CardHeader
             title="Candidate Accounts"
             description="Manage your candidate accounts"
-            action={
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={openBulkModal}>
-                  <Upload className="w-4 h-4 mr-2" />
-                  Bulk Import
-                </Button>
-                <Button onClick={openModal}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Candidate
-                </Button>
-              </div>
-            }
           />
           <CardContent>
-            <div className="mb-4">
-              <SearchInput
-                placeholder="Search candidates..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                onClear={() => setSearch('')}
-              />
-            </div>
-
             {loading ? (
               <div className="space-y-2">
                 {[...Array(5)].map((_, i) => (
@@ -219,7 +224,7 @@ export default function CandidatesPage() {
                 icon={Users}
                 title="No candidates found"
                 description={search ? 'Try a different search term' : 'Create your first candidate to get started'}
-                action={!search ? { label: 'Add Candidate', onClick: openModal } : undefined}
+                action={!search ? { label: 'Add Candidate', onClick: openCreatePanel } : undefined}
               />
             ) : (
               <Table>
@@ -271,8 +276,23 @@ export default function CandidatesPage() {
       </div>
 
       {/* Create Candidate Modal */}
-      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Create Candidate">
-        <form onSubmit={handleCreate} className="space-y-4">
+      <FocusPanel
+        isOpen={showCreatePanel}
+        onClose={() => setShowCreatePanel(false)}
+        title="Create Candidate"
+        subtitle="Add a learner and share credentials instantly."
+        footer={(
+          <div className="flex justify-end gap-3">
+            <Button type="button" variant="ghost" onClick={() => setShowCreatePanel(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" form="create-candidate-form" loading={creating}>
+              Create Candidate
+            </Button>
+          </div>
+        )}
+      >
+        <form id="create-candidate-form" onSubmit={handleCreate} className="space-y-4">
           <Input
             id="fullName"
             label="Full Name"
@@ -311,20 +331,27 @@ export default function CandidatesPage() {
               {error}
             </div>
           )}
-
-          <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" variant="ghost" onClick={() => setShowModal(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" loading={creating}>
-              Create Candidate
-            </Button>
-          </div>
         </form>
-      </Modal>
+      </FocusPanel>
 
       {/* Bulk Import Modal */}
-      <Modal isOpen={showBulkModal} onClose={() => setShowBulkModal(false)} title="Bulk Import Candidates" size="lg">
+      <FocusPanel
+        isOpen={showBulkPanel}
+        onClose={() => setShowBulkPanel(false)}
+        title="Bulk Import Candidates"
+        subtitle="Paste a CSV to create multiple candidates at once."
+        size="lg"
+        footer={(
+          <div className="flex justify-end gap-3">
+            <Button type="button" variant="ghost" onClick={() => setShowBulkPanel(false)}>
+              Close
+            </Button>
+            <Button onClick={handleBulkCreate} loading={creating} disabled={!csvData.trim()}>
+              Import Candidates
+            </Button>
+          </div>
+        )}
+      >
         <div className="space-y-4">
           <p className="text-sm text-slate-400">
             Paste CSV data with format: <code className="text-blue-600">username,password,full_name</code>
@@ -360,17 +387,8 @@ export default function CandidatesPage() {
               {error}
             </div>
           )}
-
-          <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" variant="ghost" onClick={() => setShowBulkModal(false)}>
-              Close
-            </Button>
-            <Button onClick={handleBulkCreate} loading={creating} disabled={!csvData.trim()}>
-              Import Candidates
-            </Button>
-          </div>
         </div>
-      </Modal>
+      </FocusPanel>
     </div>
   );
 }

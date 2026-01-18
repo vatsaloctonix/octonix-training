@@ -4,7 +4,7 @@
  */
 
 import { cn } from '@/lib/utils';
-import { InputHTMLAttributes, forwardRef } from 'react';
+import { InputHTMLAttributes, forwardRef, useId } from 'react';
 import { Check } from 'lucide-react';
 
 interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
@@ -13,16 +13,19 @@ interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'typ
 
 export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
   ({ className, label, id, checked, ...props }, ref) => {
+    const fallbackId = useId();
+    const inputId = id || fallbackId;
+
     return (
       <label
-        htmlFor={id}
+        htmlFor={inputId}
         className={cn('flex items-center gap-2 cursor-pointer', className)}
       >
         <div className="relative">
           <input
             ref={ref}
             type="checkbox"
-            id={id}
+            id={inputId}
             checked={checked}
             className="sr-only peer"
             {...props}

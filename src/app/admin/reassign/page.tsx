@@ -15,6 +15,8 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar } from '@/components/ui/avatar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { EmptyState } from '@/components/ui/empty-state';
+import { InlineNotice } from '@/components/ui/inline-notice';
+import { SearchInput } from '@/components/ui/search-input';
 import { Users, ArrowRight } from 'lucide-react';
 
 interface User {
@@ -32,7 +34,8 @@ export default function ReassignPage() {
   const [targetTrainer, setTargetTrainer] = useState('');
   const [selectedCandidates, setSelectedCandidates] = useState<string[]>([]);
   const [reassigning, setReassigning] = useState(false);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState<{ type: 'success' | 'danger'; text: string } | null>(null);
+  const [candidateSearch, setCandidateSearch] = useState('');
 
   useEffect(() => {
     fetchTrainers();
@@ -45,6 +48,7 @@ export default function ReassignPage() {
       setCandidates([]);
     }
     setSelectedCandidates([]);
+    setCandidateSearch('');
   }, [selectedTrainer]);
 
   const fetchTrainers = async () => {
@@ -76,7 +80,7 @@ export default function ReassignPage() {
     if (!targetTrainer || selectedCandidates.length === 0) return;
 
     setReassigning(true);
-    setMessage('');
+    setMessage(null);
 
     try {
       // Reassign each candidate
@@ -92,15 +96,18 @@ export default function ReassignPage() {
 
       const success = results.every((r) => r.ok);
       if (success) {
-        setMessage(`Successfully reassigned ${selectedCandidates.length} candidate(s)`);
+        setMessage({
+          type: 'success',
+          text: `Reassigned ${selectedCandidates.length} candidate(s) successfully.`,
+        });
         setCandidates(candidates.filter((c) => !selectedCandidates.includes(c.id)));
         setSelectedCandidates([]);
       } else {
-        setMessage('Some reassignments failed');
+        setMessage({ type: 'danger', text: 'Some reassignments failed. Review and retry.' });
       }
     } catch (err) {
       console.error('Failed to reassign candidates:', err);
-      setMessage('Failed to reassign candidates');
+      setMessage({ type: 'danger', text: 'Failed to reassign candidates. Please try again.' });
     } finally {
       setReassigning(false);
     }
@@ -112,11 +119,28 @@ export default function ReassignPage() {
     );
   };
 
+  const visibleCandidates = candidates.filter((candidate) => {
+    if (!candidateSearch.trim()) return true;
+    const term = candidateSearch.toLowerCase();
+    return (
+      candidate.username.toLowerCase().includes(term) ||
+      candidate.full_name.toLowerCase().includes(term)
+    );
+  });
+
+  const allVisibleSelected = visibleCandidates.length > 0 &&
+    visibleCandidates.every((c) => selectedCandidates.includes(c.id));
+
   const toggleAll = () => {
-    if (selectedCandidates.length === candidates.length) {
-      setSelectedCandidates([]);
+    if (allVisibleSelected) {
+      setSelectedCandidates((prev) =>
+        prev.filter((id) => !visibleCandidates.some((c) => c.id === id))
+      );
     } else {
-      setSelectedCandidates(candidates.map((c) => c.id));
+      const toAdd = visibleCandidates
+        .map((c) => c.id)
+        .filter((id) => !selectedCandidates.includes(id));
+      setSelectedCandidates((prev) => [...prev, ...toAdd]);
     }
   };
 
@@ -125,16 +149,23 @@ export default function ReassignPage() {
     label: t.full_name,
   }));
 
+  const sourceTrainerName = trainers.find((t) => t.id === selectedTrainer)?.full_name || 'Not selected';
+  const targetTrainerName = trainers.find((t) => t.id === targetTrainer)?.full_name || 'Not selected';
+
   return (
     <div>
-      <Header title="Reassign Candidates" />
+      <Header
+        title="Candidate Transfer Desk"
+        subtitle="Move candidates safely while preserving their assignments."
+        meta={[{ label: 'Time zone', value: 'ET' }]}
+      />
 
       <div className="p-6 space-y-6">
         {/* Selection Controls */}
         <Card>
           <CardHeader
-            title="Reassign Candidates"
-            description="Move candidates from one trainer to another"
+            title="Step 1: Choose Trainers"
+            description="Select the current trainer and the new destination."
           />
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
@@ -165,30 +196,52 @@ export default function ReassignPage() {
           </CardContent>
         </Card>
 
-        {/* Candidates Table */}
         <Card>
           <CardHeader
-            title="Select Candidates"
-            description={selectedCandidates.length > 0 ? `${selectedCandidates.length} selected` : 'Select candidates to reassign'}
-            action={
+            title="Transfer Preview"
+            description="Confirm the impact before applying changes."
+            action={(
               <Button
                 onClick={handleReassign}
                 disabled={!targetTrainer || selectedCandidates.length === 0}
                 loading={reassigning}
               >
-                Reassign Selected
+                Reassign {selectedCandidates.length || 0} Candidate{selectedCandidates.length !== 1 && 's'}
               </Button>
-            }
+            )}
+          />
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-slate-600">
+              <div className="rounded-lg border border-slate-200/70 bg-white/70 px-4 py-3">
+                <p className="text-xs uppercase tracking-wide text-slate-400">From</p>
+                <p className="text-slate-900 font-medium mt-1">{sourceTrainerName}</p>
+              </div>
+              <div className="rounded-lg border border-slate-200/70 bg-white/70 px-4 py-3">
+                <p className="text-xs uppercase tracking-wide text-slate-400">To</p>
+                <p className="text-slate-900 font-medium mt-1">{targetTrainerName}</p>
+              </div>
+              <div className="rounded-lg border border-slate-200/70 bg-white/70 px-4 py-3">
+                <p className="text-xs uppercase tracking-wide text-slate-400">Selected</p>
+                <p className="text-slate-900 font-medium mt-1">{selectedCandidates.length} candidate(s)</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Candidates Table */}
+        <Card>
+          <CardHeader
+            title="Step 2: Select Candidates"
+            description={selectedCandidates.length > 0 ? `${selectedCandidates.length} selected` : 'Pick the candidates to move'}
           />
           <CardContent>
             {message && (
-              <div className={`mb-4 px-4 py-3 rounded-lg text-sm ${
-                message.includes('Success')
-                  ? 'bg-green-900/30 border border-green-800 text-green-400'
-                  : 'bg-red-900/30 border border-red-800 text-red-400'
-              }`}>
-                {message}
-              </div>
+              <InlineNotice
+                variant={message.type}
+                title={message.type === 'success' ? 'Transfer complete' : 'Transfer blocked'}
+                message={message.text}
+                className="mb-4"
+              />
             )}
 
             {!selectedTrainer ? (
@@ -204,45 +257,60 @@ export default function ReassignPage() {
                 description="This trainer has no candidates"
               />
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-12">
-                      <Checkbox
-                        checked={selectedCandidates.length === candidates.length}
-                        onChange={toggleAll}
-                      />
-                    </TableHead>
-                    <TableHead>Candidate</TableHead>
-                    <TableHead>Username</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {candidates.map((candidate) => (
-                    <TableRow key={candidate.id}>
-                      <TableCell>
+              <div className="space-y-4">
+                <SearchInput
+                  placeholder="Search candidates..."
+                  value={candidateSearch}
+                  onChange={(e) => setCandidateSearch(e.target.value)}
+                  onClear={() => setCandidateSearch('')}
+                />
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-12">
                         <Checkbox
-                          checked={selectedCandidates.includes(candidate.id)}
-                          onChange={() => toggleSelect(candidate.id)}
+                          checked={allVisibleSelected}
+                          onChange={toggleAll}
                         />
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar name={candidate.full_name} size="sm" />
-                          <span className="font-medium text-slate-900">{candidate.full_name}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-slate-400">@{candidate.username}</TableCell>
-                      <TableCell>
-                        <Badge variant={candidate.is_active ? 'success' : 'danger'}>
-                          {candidate.is_active ? 'Active' : 'Inactive'}
-                        </Badge>
-                      </TableCell>
+                      </TableHead>
+                      <TableHead>Candidate</TableHead>
+                      <TableHead>Username</TableHead>
+                      <TableHead>Status</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {visibleCandidates.map((candidate) => (
+                      <TableRow key={candidate.id}>
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedCandidates.includes(candidate.id)}
+                            onChange={() => toggleSelect(candidate.id)}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar name={candidate.full_name} size="sm" />
+                            <span className="font-medium text-slate-900">{candidate.full_name}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-slate-400">@{candidate.username}</TableCell>
+                        <TableCell>
+                          <Badge variant={candidate.is_active ? 'success' : 'danger'}>
+                            {candidate.is_active ? 'Active' : 'Inactive'}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {visibleCandidates.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center text-slate-500 py-8">
+                          No matching candidates
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </CardContent>
         </Card>

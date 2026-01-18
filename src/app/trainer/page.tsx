@@ -7,6 +7,7 @@
 
 import { useEffect, useState } from 'react';
 import { Header } from '@/components/layout/header';
+import { ActionDock } from '@/components/layout/action-dock';
 import { StatsCard } from '@/components/ui/stats-card';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -20,6 +21,8 @@ import {
   ClipboardList,
 } from 'lucide-react';
 import { formatDuration, getRelativeTime } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 interface CandidateProgress {
   id: string;
@@ -40,6 +43,13 @@ interface DashboardData {
   total_assignments: number;
   avg_completion_rate: number;
   candidates: CandidateProgress[];
+  recent_activities: ActivityLog[];
+}
+
+interface ActivityLog {
+  id: string;
+  action: string;
+  created_at: string;
 }
 
 export default function TrainerDashboardPage() {
@@ -79,7 +89,24 @@ export default function TrainerDashboardPage() {
 
   return (
     <div>
-      <Header title="Trainer Dashboard" />
+      <Header
+        title="Trainer Studio"
+        subtitle="Track momentum, manage learners, and ship content faster."
+        meta={[{ label: 'Time zone', value: 'ET' }]}
+        actions={(
+          <ActionDock>
+            <Link href="/trainer/candidates">
+              <Button size="sm">Add Candidate</Button>
+            </Link>
+            <Link href="/trainer/content">
+              <Button size="sm" variant="outline">Create Content</Button>
+            </Link>
+            <Link href="/trainer/assignments">
+              <Button size="sm" variant="ghost">Assign Content</Button>
+            </Link>
+          </ActionDock>
+        )}
+      />
 
       <div className="p-6 space-y-6">
         {/* Stats Grid */}
@@ -108,6 +135,7 @@ export default function TrainerDashboardPage() {
             title="Assignments"
             value={data?.total_assignments || 0}
             icon={ClipboardList}
+            description={`Avg completion ${data?.avg_completion_rate || 0}%`}
           />
         </div>
 
@@ -167,6 +195,33 @@ export default function TrainerDashboardPage() {
                 )}
               </TableBody>
             </Table>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader
+            title="Recent Activity"
+            description="Latest actions from your workspace"
+          />
+          <CardContent>
+            <div className="space-y-3">
+              {data?.recent_activities?.slice(0, 8).map((activity) => (
+                <div
+                  key={activity.id}
+                  className="flex items-center justify-between border-b border-slate-200/70 pb-3 last:border-0 last:pb-0"
+                >
+                  <p className="text-sm text-slate-700">
+                    {activity.action.replace(/_/g, ' ')}
+                  </p>
+                  <span className="text-xs text-slate-500">
+                    {getRelativeTime(activity.created_at)}
+                  </span>
+                </div>
+              ))}
+              {(!data?.recent_activities || data.recent_activities.length === 0) && (
+                <p className="text-sm text-slate-500">No recent activity yet.</p>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>

@@ -10,14 +10,14 @@ import { Header } from '@/components/layout/header';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Modal } from '@/components/ui/modal';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Avatar } from '@/components/ui/avatar';
-import { SearchInput } from '@/components/ui/search-input';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Plus, GraduationCap, ToggleLeft, ToggleRight } from 'lucide-react';
 import { formatDate, generatePassword } from '@/lib/utils';
+import { FocusPanel } from '@/components/layout/focus-panel';
+import { ActionDock } from '@/components/layout/action-dock';
 
 interface Trainer {
   id: string;
@@ -31,7 +31,7 @@ export default function TrainersPage() {
   const [trainers, setTrainers] = useState<Trainer[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [showModal, setShowModal] = useState(false);
+  const [showPanel, setShowPanel] = useState(false);
   const [creating, setCreating] = useState(false);
 
   // Form state
@@ -84,7 +84,7 @@ export default function TrainersPage() {
       }
 
       setTrainers([json.user, ...trainers]);
-      setShowModal(false);
+      setShowPanel(false);
       resetForm();
     } catch (err) {
       console.error('Failed to create trainer:', err);
@@ -120,10 +120,10 @@ export default function TrainersPage() {
     setError('');
   };
 
-  const openModal = () => {
+  const openPanel = () => {
     resetForm();
     setPassword(generatePassword(8));
-    setShowModal(true);
+    setShowPanel(true);
   };
 
   const filteredTrainers = trainers.filter((t) =>
@@ -133,31 +133,33 @@ export default function TrainersPage() {
 
   return (
     <div>
-      <Header title="Trainers" />
+      <Header
+        title="Trainer Stewardship"
+        subtitle="Create, activate, and monitor trainer access."
+        meta={[
+          { label: 'Total trainers', value: String(trainers.length) },
+          { label: 'Active', value: String(trainers.filter((t) => t.is_active).length) },
+        ]}
+        showSearch
+        onSearch={setSearch}
+        searchPlaceholder="Search trainers..."
+        actions={(
+          <ActionDock>
+            <Button onClick={openPanel} size="sm">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Trainer
+            </Button>
+          </ActionDock>
+        )}
+      />
 
       <div className="p-6">
         <Card>
           <CardHeader
             title="Trainer Accounts"
             description="Manage trainer accounts and their access"
-            action={
-              <Button onClick={openModal}>
-                <Plus className="w-4 h-4 mr-2" />
-                Add Trainer
-              </Button>
-            }
           />
           <CardContent>
-            {/* Search */}
-            <div className="mb-4">
-              <SearchInput
-                placeholder="Search trainers..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                onClear={() => setSearch('')}
-              />
-            </div>
-
             {loading ? (
               <div className="space-y-2">
                 {[...Array(5)].map((_, i) => (
@@ -169,7 +171,7 @@ export default function TrainersPage() {
                 icon={GraduationCap}
                 title="No trainers found"
                 description={search ? 'Try a different search term' : 'Create your first trainer to get started'}
-                action={!search ? { label: 'Add Trainer', onClick: openModal } : undefined}
+                action={!search ? { label: 'Add Trainer', onClick: openPanel } : undefined}
               />
             ) : (
               <Table>
@@ -221,12 +223,23 @@ export default function TrainersPage() {
       </div>
 
       {/* Create Trainer Modal */}
-      <Modal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
+      <FocusPanel
+        isOpen={showPanel}
+        onClose={() => setShowPanel(false)}
         title="Create Trainer"
+        subtitle="Issue credentials and set the trainer up for success."
+        footer={(
+          <div className="flex justify-end gap-3">
+            <Button type="button" variant="ghost" onClick={() => setShowPanel(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" form="create-trainer-form" loading={creating}>
+              Create Trainer
+            </Button>
+          </div>
+        )}
       >
-        <form onSubmit={handleCreate} className="space-y-4">
+        <form id="create-trainer-form" onSubmit={handleCreate} className="space-y-4">
           <Input
             id="fullName"
             label="Full Name"
@@ -265,21 +278,8 @@ export default function TrainersPage() {
               {error}
             </div>
           )}
-
-          <div className="flex justify-end gap-3 pt-4">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setShowModal(false)}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" loading={creating}>
-              Create Trainer
-            </Button>
-          </div>
         </form>
-      </Modal>
+      </FocusPanel>
     </div>
   );
 }

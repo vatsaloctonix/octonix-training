@@ -6,7 +6,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { ReactNode, useEffect } from 'react';
+import { ReactNode, useEffect, useId } from 'react';
 import { X } from 'lucide-react';
 
 interface ModalProps {
@@ -18,6 +18,7 @@ interface ModalProps {
 }
 
 export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalProps) {
+  const titleId = useId();
   // Close on escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -54,6 +55,9 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
 
       {/* Modal */}
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
         className={cn(
           'relative w-full mx-4 bg-white/90 border border-white/60 rounded-2xl shadow-[0_20px_60px_rgba(15,23,42,0.18)] backdrop-blur-2xl',
           sizes[size]
@@ -61,10 +65,11 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200/70">
-          <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
+          <h2 id={titleId} className="text-lg font-semibold text-slate-900">{title}</h2>
           <button
             onClick={onClose}
             className="p-1 text-slate-500 hover:text-slate-900 transition-colors"
+            aria-label="Close dialog"
           >
             <X className="w-5 h-5" />
           </button>

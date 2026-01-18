@@ -8,18 +8,18 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout/header';
+import { ActionDock } from '@/components/layout/action-dock';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select } from '@/components/ui/select';
-import { Modal } from '@/components/ui/modal';
-import { SearchInput } from '@/components/ui/search-input';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { Plus, BookOpen, Layers, PlayCircle, Edit, Trash2, Eye } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { FocusPanel } from '@/components/layout/focus-panel';
 
 interface Index {
   id: string;
@@ -46,7 +46,7 @@ export default function CRMCoursesPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterIndex, setFilterIndex] = useState('');
-  const [showModal, setShowModal] = useState(false);
+  const [showPanel, setShowPanel] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -131,7 +131,7 @@ export default function CRMCoursesPage() {
     setIndexId(indexes[0]?.id || '');
     setThumbnailUrl('');
     setError('');
-    setShowModal(true);
+    setShowPanel(true);
   };
 
   const openEditModal = (course: Course) => {
@@ -141,11 +141,11 @@ export default function CRMCoursesPage() {
     setIndexId(course.index_id);
     setThumbnailUrl(course.thumbnail_url || '');
     setError('');
-    setShowModal(true);
+    setShowPanel(true);
   };
 
   const closeModal = () => {
-    setShowModal(false);
+    setShowPanel(false);
     setEditingCourse(null);
   };
 
@@ -157,30 +157,34 @@ export default function CRMCoursesPage() {
 
   return (
     <div>
-      <Header title="Courses" />
+      <Header
+        title="Course Library"
+        subtitle="Create, edit, and ship courses faster."
+        meta={[{ label: 'Courses', value: String(courses.length) }]}
+        showSearch
+        onSearch={setSearch}
+        searchPlaceholder="Search courses..."
+        actions={(
+          <ActionDock>
+            <Button onClick={openCreateModal} disabled={indexes.length === 0} size="sm">
+              <Plus className="w-4 h-4 mr-2" />
+              Create Course
+            </Button>
+            <Link href="/crm/content">
+              <Button size="sm" variant="ghost">Content Studio</Button>
+            </Link>
+          </ActionDock>
+        )}
+      />
 
       <div className="p-6">
         <Card>
           <CardHeader
             title="Course Library"
             description="Manage your courses and their content"
-            action={
-              <Button onClick={openCreateModal} disabled={indexes.length === 0}>
-                <Plus className="w-4 h-4 mr-2" />
-                Create Course
-              </Button>
-            }
           />
           <CardContent>
             <div className="flex gap-4 mb-6">
-              <div className="flex-1">
-                <SearchInput
-                  placeholder="Search courses..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  onClear={() => setSearch('')}
-                />
-              </div>
               <div className="w-48">
                 <Select
                   value={filterIndex}
@@ -282,8 +286,19 @@ export default function CRMCoursesPage() {
         </Card>
       </div>
 
-      <Modal isOpen={showModal} onClose={closeModal} title={editingCourse ? 'Edit Course' : 'Create Course'}>
-        <form onSubmit={handleSave} className="space-y-4">
+      <FocusPanel
+        isOpen={showPanel}
+        onClose={closeModal}
+        title={editingCourse ? 'Edit Course' : 'Create Course'}
+        subtitle="Courses bundle sections and lectures into a learner journey."
+        footer={(
+          <div className="flex justify-end gap-3 pt-4">
+            <Button type="button" variant="ghost" onClick={closeModal}>Cancel</Button>
+            <Button type="submit" form="crm-course-form" loading={saving}>{editingCourse ? 'Save Changes' : 'Create Course'}</Button>
+          </div>
+        )}
+      >
+        <form id="crm-course-form" onSubmit={handleSave} className="space-y-4">
           <Select
             id="indexId"
             label="Index"
@@ -297,13 +312,8 @@ export default function CRMCoursesPage() {
           <Input id="thumbnailUrl" label="Thumbnail URL" value={thumbnailUrl} onChange={(e) => setThumbnailUrl(e.target.value)} />
 
           {error && <div className="bg-red-900/30 border border-red-800 text-red-400 px-4 py-3 rounded-lg text-sm">{error}</div>}
-
-          <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" variant="ghost" onClick={closeModal}>Cancel</Button>
-            <Button type="submit" loading={saving}>{editingCourse ? 'Save Changes' : 'Create Course'}</Button>
-          </div>
         </form>
-      </Modal>
+      </FocusPanel>
     </div>
   );
 }

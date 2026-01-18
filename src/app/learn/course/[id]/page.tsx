@@ -259,6 +259,8 @@ export default function CourseViewerPage() {
   const totalLectures = course?.sections.reduce((acc, s) => acc + s.lectures.length, 0) || 0;
   const completedLectures = Array.from(progress.values()).filter((p) => p.is_completed).length;
   const completionPercentage = totalLectures > 0 ? Math.round((completedLectures / totalLectures) * 100) : 0;
+  const currentLectureCompleted = currentLecture ? progress.get(currentLecture.id)?.is_completed : false;
+  const nextLecture = currentLecture ? findNextLecture(currentLecture) : null;
 
   if (loading) {
     return (
@@ -283,7 +285,14 @@ export default function CourseViewerPage() {
 
   return (
     <div>
-      <Header title={course.title} />
+      <Header
+        title={course.title}
+        subtitle={course.index_name}
+        meta={[
+          { label: 'Progress', value: `${completionPercentage}%` },
+          { label: 'Lectures', value: `${completedLectures}/${totalLectures}` },
+        ]}
+      />
 
       <div className="p-6">
         {/* Back link */}
@@ -292,7 +301,7 @@ export default function CourseViewerPage() {
           className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-6"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to My Learning
+          Back to Learning Hub
         </Link>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -322,7 +331,7 @@ export default function CourseViewerPage() {
                 {/* Lecture Info */}
                 <Card>
                   <CardContent className="py-4">
-                    <div className="flex items-start justify-between mb-4">
+                    <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between mb-4">
                       <div>
                         <h2 className="text-xl font-semibold text-slate-900 mb-1">
                           {currentLecture.title}
@@ -334,22 +343,32 @@ export default function CourseViewerPage() {
                           </p>
                         )}
                       </div>
-                      <Button
-                        onClick={handleMarkComplete}
-                        disabled={progress.get(currentLecture.id)?.is_completed}
-                      >
-                        {progress.get(currentLecture.id)?.is_completed ? (
-                          <>
-                            <CheckCircle className="w-4 h-4 mr-2" />
-                            Completed
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle className="w-4 h-4 mr-2" />
-                            Mark Complete
-                          </>
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          onClick={handleMarkComplete}
+                          disabled={currentLectureCompleted}
+                        >
+                          {currentLectureCompleted ? (
+                            <>
+                              <CheckCircle className="w-4 h-4 mr-2" />
+                              Completed
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle className="w-4 h-4 mr-2" />
+                              Mark Complete
+                            </>
+                          )}
+                        </Button>
+                        {currentLectureCompleted && nextLecture && (
+                          <Button
+                            variant="outline"
+                            onClick={() => selectLecture(nextLecture)}
+                          >
+                            Next Lecture
+                          </Button>
                         )}
-                      </Button>
+                      </div>
                     </div>
 
                     {currentLecture.description && (

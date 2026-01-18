@@ -7,18 +7,19 @@
 
 import { useEffect, useState } from 'react';
 import { Header } from '@/components/layout/header';
+import { ActionDock } from '@/components/layout/action-dock';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Modal } from '@/components/ui/modal';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Avatar } from '@/components/ui/avatar';
-import { SearchInput } from '@/components/ui/search-input';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Plus, Users, ToggleLeft, ToggleRight, Upload } from 'lucide-react';
 import { formatDate, generatePassword, parseCSV } from '@/lib/utils';
+import { FocusPanel } from '@/components/layout/focus-panel';
+import Link from 'next/link';
 
 interface OtherUser {
   id: string;
@@ -32,8 +33,8 @@ export default function OthersPage() {
   const [others, setOthers] = useState<OtherUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [showModal, setShowModal] = useState(false);
-  const [showBulkModal, setShowBulkModal] = useState(false);
+  const [showCreatePanel, setShowCreatePanel] = useState(false);
+  const [showBulkPanel, setShowBulkPanel] = useState(false);
   const [creating, setCreating] = useState(false);
 
   const [username, setUsername] = useState('');
@@ -88,7 +89,7 @@ export default function OthersPage() {
       }
 
       setOthers([json.user, ...others]);
-      setShowModal(false);
+      setShowCreatePanel(false);
       resetForm();
     } catch (err) {
       console.error('Failed to create staff user:', err);
@@ -155,17 +156,17 @@ export default function OthersPage() {
     setError('');
   };
 
-  const openModal = () => {
+  const openCreatePanel = () => {
     resetForm();
     setPassword(generatePassword(8));
-    setShowModal(true);
+    setShowCreatePanel(true);
   };
 
-  const openBulkModal = () => {
+  const openBulkPanel = () => {
     setCsvData('');
     setBulkResults([]);
     setError('');
-    setShowBulkModal(true);
+    setShowBulkPanel(true);
   };
 
   const filteredOthers = others.filter((o) =>
@@ -175,36 +176,40 @@ export default function OthersPage() {
 
   return (
     <div>
-      <Header title="Staff Users" />
+      <Header
+        title="Roster Command"
+        subtitle="Create staff accounts and keep access tidy."
+        meta={[
+          { label: 'Total staff', value: String(others.length) },
+          { label: 'Active', value: String(others.filter((o) => o.is_active).length) },
+        ]}
+        showSearch
+        onSearch={setSearch}
+        searchPlaceholder="Search staff users..."
+        actions={(
+          <ActionDock>
+            <Button variant="outline" onClick={openBulkPanel} size="sm">
+              <Upload className="w-4 h-4 mr-2" />
+              Bulk Import
+            </Button>
+            <Button onClick={openCreatePanel} size="sm">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Staff User
+            </Button>
+            <Link href="/crm/assignments">
+              <Button variant="ghost" size="sm">Assign Content</Button>
+            </Link>
+          </ActionDock>
+        )}
+      />
 
       <div className="p-6">
         <Card>
           <CardHeader
             title="Staff Accounts"
             description="Manage staff user accounts"
-            action={
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={openBulkModal}>
-                  <Upload className="w-4 h-4 mr-2" />
-                  Bulk Import
-                </Button>
-                <Button onClick={openModal}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Staff User
-                </Button>
-              </div>
-            }
           />
           <CardContent>
-            <div className="mb-4">
-              <SearchInput
-                placeholder="Search staff users..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                onClear={() => setSearch('')}
-              />
-            </div>
-
             {loading ? (
               <div className="space-y-2">
                 {[...Array(5)].map((_, i) => (
@@ -216,7 +221,7 @@ export default function OthersPage() {
                 icon={Users}
                 title="No staff users found"
                 description={search ? 'Try a different search term' : 'Create your first staff user'}
-                action={!search ? { label: 'Add Staff User', onClick: openModal } : undefined}
+                action={!search ? { label: 'Add Staff User', onClick: openCreatePanel } : undefined}
               />
             ) : (
               <Table>
@@ -267,8 +272,23 @@ export default function OthersPage() {
         </Card>
       </div>
 
-      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Create Staff User">
-        <form onSubmit={handleCreate} className="space-y-4">
+      <FocusPanel
+        isOpen={showCreatePanel}
+        onClose={() => setShowCreatePanel(false)}
+        title="Create Staff User"
+        subtitle="Issue credentials for a staff member."
+        footer={(
+          <div className="flex justify-end gap-3">
+            <Button type="button" variant="ghost" onClick={() => setShowCreatePanel(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" form="create-staff-form" loading={creating}>
+              Create Staff User
+            </Button>
+          </div>
+        )}
+      >
+        <form id="create-staff-form" onSubmit={handleCreate} className="space-y-4">
           <Input
             id="fullName"
             label="Full Name"
@@ -305,19 +325,24 @@ export default function OthersPage() {
               {error}
             </div>
           )}
+        </form>
+      </FocusPanel>
 
-          <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" variant="ghost" onClick={() => setShowModal(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" loading={creating}>
-              Create Staff User
+      <FocusPanel
+        isOpen={showBulkPanel}
+        onClose={() => setShowBulkPanel(false)}
+        title="Bulk Import Staff"
+        subtitle="Paste a CSV to create multiple staff accounts."
+        size="lg"
+        footer={(
+          <div className="flex justify-end gap-3">
+            <Button variant="ghost" onClick={() => setShowBulkPanel(false)}>Close</Button>
+            <Button onClick={handleBulkCreate} loading={creating} disabled={!csvData.trim()}>
+              Import Staff
             </Button>
           </div>
-        </form>
-      </Modal>
-
-      <Modal isOpen={showBulkModal} onClose={() => setShowBulkModal(false)} title="Bulk Import Staff" size="lg">
+        )}
+      >
         <div className="space-y-4">
           <p className="text-sm text-slate-400">
             Paste CSV data: <code className="text-blue-600">username,password,full_name</code>
@@ -344,15 +369,8 @@ export default function OthersPage() {
               ))}
             </div>
           )}
-
-          <div className="flex justify-end gap-3 pt-4">
-            <Button variant="ghost" onClick={() => setShowBulkModal(false)}>Close</Button>
-            <Button onClick={handleBulkCreate} loading={creating} disabled={!csvData.trim()}>
-              Import Staff
-            </Button>
-          </div>
         </div>
-      </Modal>
+      </FocusPanel>
     </div>
   );
 }

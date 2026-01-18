@@ -19,6 +19,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [capsLock, setCapsLock] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,87 +51,125 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-white via-slate-50 to-blue-50 px-4">
-      {/* Background decoration */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-200/50 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-300/40 rounded-full blur-3xl" />
-      </div>
+    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] bg-gradient-to-br from-white via-slate-50 to-blue-50">
+      {/* Left panel */}
+      <div className="relative hidden lg:flex flex-col justify-between px-12 py-16 overflow-hidden">
+        <div className="absolute inset-0">
+          <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-200/40 rounded-full blur-3xl" />
+          <div className="absolute -bottom-40 -left-20 w-96 h-96 bg-blue-300/30 rounded-full blur-3xl" />
+        </div>
 
-      <div className="relative w-full max-w-md">
-        {/* Logo and title */}
-        <div className="text-center mb-8">
+        <div className="relative">
           <Image
             src="/logo.png"
             alt="Octonix Consulting"
             width={240}
             height={60}
-            className="h-10 w-auto mx-auto"
+            className="h-10 w-auto"
             priority
           />
-          <p className="text-slate-600 mt-3">Sign in to your account</p>
+          <p className="text-slate-600 mt-4 max-w-md">
+            A focused training workspace for admins, trainers, CRM teams, and learners.
+          </p>
         </div>
 
-        {/* Login form */}
-        <div className="bg-white/80 backdrop-blur-xl border border-white/60 rounded-2xl p-8 shadow-[0_20px_60px_rgba(15,23,42,0.12)]">
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <Input
-              id="username"
-              label="Username"
-              type="text"
-              placeholder="Enter your username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-              autoComplete="username"
-              autoFocus
+        <div className="relative space-y-4 text-sm text-slate-600 max-w-md">
+          <div className="bg-white/70 border border-white/60 rounded-2xl p-5 backdrop-blur-xl">
+            <p className="font-medium text-slate-900 mb-2">What you can do here</p>
+            <ul className="space-y-2">
+              <li>Provision access for every role in minutes.</li>
+              <li>Create structured content with zero friction.</li>
+              <li>Track completion and learner momentum.</li>
+            </ul>
+          </div>
+          <p className="text-xs text-slate-500">
+            Need access? Reach out to your administrator to get set up.
+          </p>
+        </div>
+      </div>
+
+      {/* Right panel */}
+      <div className="flex items-center justify-center px-6 py-12">
+        <div className="w-full max-w-md">
+          <div className="text-center mb-8">
+            <Image
+              src="/logo.png"
+              alt="Octonix Consulting"
+              width={240}
+              height={60}
+              className="h-10 w-auto mx-auto"
+              priority
             />
+            <p className="text-slate-600 mt-3">Sign in to continue</p>
+          </div>
 
-            <div className="relative">
+          <div className="bg-white/80 backdrop-blur-xl border border-white/60 rounded-2xl p-8 shadow-[0_20px_60px_rgba(15,23,42,0.12)]">
+            <form onSubmit={handleSubmit} className="space-y-5">
               <Input
-                id="password"
-                label="Password"
-                type={showPassword ? 'text' : 'password'}
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                id="username"
+                label="Username"
+                type="text"
+                placeholder="Enter your username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 required
-                autoComplete="current-password"
+                autoComplete="username"
+                autoFocus
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-[34px] text-slate-500 hover:text-slate-900 transition-colors"
-              >
-                {showPassword ? (
-                  <EyeOff className="w-5 h-5" />
-                ) : (
-                  <Eye className="w-5 h-5" />
-                )}
-              </button>
-            </div>
 
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
-                {error}
+              <div className="relative">
+                <Input
+                  id="password"
+                  label="Password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyUp={(e) => setCapsLock(e.getModifierState('CapsLock'))}
+                  required
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-[34px] text-slate-500 hover:text-slate-900 transition-colors"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
               </div>
-            )}
 
-            <Button
-              type="submit"
-              className="w-full"
-              size="lg"
-              loading={loading}
-            >
-              Sign In
-            </Button>
-          </form>
+              {capsLock && (
+                <div className="bg-amber-50 border border-amber-200 text-amber-700 px-3 py-2 rounded-lg text-xs">
+                  Caps Lock is on.
+                </div>
+              )}
+
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm" role="status">
+                  {error}
+                </div>
+              )}
+
+              <Button
+                type="submit"
+                className="w-full"
+                size="lg"
+                loading={loading}
+              >
+                Sign In
+              </Button>
+            </form>
+          </div>
+
+          <p className="text-center text-slate-500 text-sm mt-6">
+            Contact your administrator if you need access
+          </p>
         </div>
-
-        {/* Footer */}
-        <p className="text-center text-slate-500 text-sm mt-6">
-          Contact your administrator if you need access
-        </p>
       </div>
     </div>
   );

@@ -7,6 +7,7 @@
 
 import { useEffect, useState } from 'react';
 import { Header } from '@/components/layout/header';
+import { ActionDock } from '@/components/layout/action-dock';
 import { StatsCard } from '@/components/ui/stats-card';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -20,6 +21,8 @@ import {
   ClipboardList,
 } from 'lucide-react';
 import { formatDuration, getRelativeTime } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 interface OtherProgress {
   id: string;
@@ -40,6 +43,13 @@ interface DashboardData {
   total_assignments: number;
   avg_completion_rate: number;
   others: OtherProgress[];
+  recent_activities: ActivityLog[];
+}
+
+interface ActivityLog {
+  id: string;
+  action: string;
+  created_at: string;
 }
 
 export default function CRMDashboardPage() {
@@ -79,7 +89,24 @@ export default function CRMDashboardPage() {
 
   return (
     <div>
-      <Header title="CRM Dashboard" />
+      <Header
+        title="CRM Studio"
+        subtitle="Guide staff learning and ship content without delays."
+        meta={[{ label: 'Time zone', value: 'ET' }]}
+        actions={(
+          <ActionDock>
+            <Link href="/crm/others">
+              <Button size="sm">Add Staff User</Button>
+            </Link>
+            <Link href="/crm/content">
+              <Button size="sm" variant="outline">Create Content</Button>
+            </Link>
+            <Link href="/crm/assignments">
+              <Button size="sm" variant="ghost">Assign Content</Button>
+            </Link>
+          </ActionDock>
+        )}
+      />
 
       <div className="p-6 space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
@@ -87,7 +114,12 @@ export default function CRMDashboardPage() {
           <StatsCard title="Indexes" value={data?.total_indexes || 0} icon={FolderOpen} />
           <StatsCard title="Courses" value={data?.total_courses || 0} icon={BookOpen} />
           <StatsCard title="Lectures" value={data?.total_lectures || 0} icon={PlayCircle} />
-          <StatsCard title="Assignments" value={data?.total_assignments || 0} icon={ClipboardList} />
+          <StatsCard
+            title="Assignments"
+            value={data?.total_assignments || 0}
+            icon={ClipboardList}
+            description={`Avg completion ${data?.avg_completion_rate || 0}%`}
+          />
         </div>
 
         <Card>
@@ -138,6 +170,30 @@ export default function CRMDashboardPage() {
                 )}
               </TableBody>
             </Table>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader title="Recent Activity" description="Latest actions from your workspace" />
+          <CardContent>
+            <div className="space-y-3">
+              {data?.recent_activities?.slice(0, 8).map((activity) => (
+                <div
+                  key={activity.id}
+                  className="flex items-center justify-between border-b border-slate-200/70 pb-3 last:border-0 last:pb-0"
+                >
+                  <p className="text-sm text-slate-700">
+                    {activity.action.replace(/_/g, ' ')}
+                  </p>
+                  <span className="text-xs text-slate-500">
+                    {getRelativeTime(activity.created_at)}
+                  </span>
+                </div>
+              ))}
+              {(!data?.recent_activities || data.recent_activities.length === 0) && (
+                <p className="text-sm text-slate-500">No recent activity yet.</p>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
