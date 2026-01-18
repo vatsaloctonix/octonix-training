@@ -1,0 +1,117 @@
+CONTEXT: Octonix Training Platform (LearnFlow)
+
+OVERVIEW
+- Web app for training and learning with multiple roles.
+- Roles: admin, trainer, crm, candidate, other (other = staff).
+- Branding: Octonix Consulting logo and white glass UI.
+
+TECH STACK
+- Next.js 16 (App Router), TypeScript, Tailwind CSS.
+- Supabase Postgres + Supabase Storage.
+- Hosted on Vercel.
+
+KEY ROUTES (UI)
+- /login (all roles sign in here)
+- /admin (admin dashboard)
+- /admin/trainers, /admin/crm, /admin/reassign
+- /trainer (trainer dashboard)
+- /trainer/candidates, /trainer/content/indexes, /trainer/content/courses, /trainer/assignments
+- /crm (crm dashboard)
+- /crm/others, /crm/content/indexes, /crm/content/courses, /crm/assignments
+- /learn (candidate/other dashboard)
+- /learn/course/[id] (learner course player)
+
+ROLES AND PERMISSIONS
+- Admin:
+  - Creates trainer and crm users.
+  - Views trainer and crm activity dashboards.
+  - Can reassign candidates between trainers (keeps existing assignments).
+- Trainer:
+  - Creates candidates.
+  - Creates Indexes and Courses, adds Sections and Lectures.
+  - Assigns Courses or Indexes to candidates.
+  - Manages attachments for lectures.
+  - Sees candidate progress.
+- CRM:
+  - Creates other (staff) users.
+  - Same content and assignment capabilities as trainer (for other users).
+  - Sees other-user progress.
+- Candidate/Other:
+  - Can only view assigned courses.
+  - Tracks progress and downloads lecture files.
+
+CONTENT MODEL
+- Index (top-level category, custom names per trainer/crm)
+  -> Course
+     -> Section
+        -> Lecture (YouTube link, description, duration)
+        -> Lecture Files (attachments)
+
+ASSIGNMENTS AND ACCESS RULES
+- Assign by Course or by Index (index assignment grants all courses under it).
+- Trainers and CRM users only see their own content/users.
+- Candidates/Others can see content assigned by multiple trainers/CRMs.
+- Admin can reassign a candidate to another trainer; previous assignments remain.
+- Deletion cascade: Index deletes Courses, Sections, Lectures, Files.
+- Soft delete supported for users via is_active.
+
+PROGRESS TRACKING
+- Learner page tracks time spent per lecture and completion.
+- Auto-complete when watch time reaches 90 percent of lecture duration.
+- Manual "Mark Complete" button is available.
+- Metrics shown on dashboards: total assignments, completion counts, time spent, last active.
+
+FILES AND YOUTUBE
+- YouTube videos are unlisted; stored as youtube_url and embedded.
+- Files uploaded to Supabase Storage bucket "lecture-files" (private).
+- Downloads use signed URLs via /api/files/download.
+- File records store storage_path and metadata.
+
+AUTH AND SESSIONS
+- Custom users table (not Supabase Auth).
+- Passwords hashed with bcrypt.
+- Session cookie name: learnflow_session (httpOnly).
+- Session records stored in user_sessions table.
+- No password reset flow; username + password only.
+- Multiple concurrent sessions allowed.
+
+DATABASE (Supabase)
+- Schema file: supabase/schema.sql
+- Tables:
+  users, indexes, courses, sections, lectures,
+  lecture_files, course_assignments, index_assignments,
+  lecture_progress, user_sessions, activity_logs, file_downloads
+- Views: trainer_stats, crm_stats
+- RLS enabled; API routes use service role to access data.
+
+API ROUTES (Server)
+- /api/auth/login, /api/auth/logout, /api/auth/me
+- /api/users, /api/users/[id], /api/users/bulk
+- /api/indexes, /api/indexes/[id]
+- /api/courses, /api/courses/[id]
+- /api/sections
+- /api/lectures
+- /api/assignments
+- /api/progress
+- /api/files (upload/delete)
+- /api/files/download (signed download)
+- /api/dashboard/admin, /api/dashboard/trainer, /api/dashboard/crm, /api/dashboard/learner
+
+DEFAULT ADMIN
+- Username: admin
+- Password: admin123
+- Inserted in supabase/schema.sql (bcrypt hash).
+
+ENV VARS (Vercel)
+- NEXT_PUBLIC_SUPABASE_URL
+- NEXT_PUBLIC_SUPABASE_ANON_KEY
+- SUPABASE_SERVICE_ROLE_KEY
+
+BRANDING AND UI
+- Logo: public/logo.png (source in assets/logo.png).
+- UI style: white glass (blurred cards, soft borders, blue accents).
+- Font: Space Grotesk (see src/app/layout.tsx).
+
+REPO
+- GitHub: https://github.com/vatsaloctonix/octonix-training.git
+- Branch: master
