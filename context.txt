@@ -115,3 +115,23 @@ BRANDING AND UI
 REPO
 - GitHub: https://github.com/vatsaloctonix/octonix-training.git
 - Branch: master
+
+USER EXPECTATIONS (WORK STYLE)
+- Ask questions up front if needed, then execute end-to-end.
+- Always commit and push changes (to the correct repo).
+- Desktop-only UX. White + blue palette (logo-aligned).
+- Reduce clicks across admin/trainer/crm flows.
+- Admin creates/manages trainer & CRM; trainer/CRM create/manage their users.
+- EST timezone is fine.
+- No password reset flow needed.
+
+RECENT WORK (Jan 23, 2026)
+- Large UX/UI refresh committed and pushed to octonix-training (master).
+- Fixed build-time Supabase error by lazy initialization in src/lib/supabase.ts.
+- Favicon work: added public/favicon.ico, src/app/favicon.ico, src/app/icon.png,
+  plus explicit icon links in src/app/layout.tsx metadata and src/app/head.tsx.
+- Removed accidental local "assessments" remote; do not push to octonix-assessments.
+
+KNOWN ISSUES / FOLLOW-UPS
+- Live site favicon still showing Vercel icon (needs verification after deploy).
+- Ensure Vercel project is connected to octonix-training master branch.
