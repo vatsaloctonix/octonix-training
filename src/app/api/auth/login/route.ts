@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
 
     if (error || !user) {
       return NextResponse.json(
-        { success: false, error: 'Invalid credentials' },
+        { success: false, error: 'Username not found' },
         { status: 401 }
       );
     }
@@ -43,11 +43,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!user.password_set) {
+      return NextResponse.json(
+        { success: false, error: 'Password not set. Check your email to create it.' },
+        { status: 403 }
+      );
+    }
+
     // Verify password
     const isValid = await verifyPassword(password, user.password_hash);
     if (!isValid) {
       return NextResponse.json(
-        { success: false, error: 'Invalid credentials' },
+        { success: false, error: 'Incorrect password' },
         { status: 401 }
       );
     }
@@ -68,10 +75,12 @@ export async function POST(request: NextRequest) {
     const safeUser = {
       id: user.id,
       username: user.username,
+      email: user.email,
       role: user.role,
       full_name: user.full_name,
       created_by: user.created_by,
       is_active: user.is_active,
+      password_set: user.password_set,
       created_at: user.created_at,
     };
 

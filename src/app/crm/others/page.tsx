@@ -16,16 +16,18 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@
 import { Badge } from '@/components/ui/badge';
 import { Avatar } from '@/components/ui/avatar';
 import { EmptyState } from '@/components/ui/empty-state';
-import { Plus, Users, ToggleLeft, ToggleRight, Upload } from 'lucide-react';
-import { formatDate, generatePassword, parseCSV } from '@/lib/utils';
+import { Plus, Users, ToggleLeft, ToggleRight, Upload, Trash2, KeyRound } from 'lucide-react';
+import { formatDate, parseCSV } from '@/lib/utils';
 import { FocusPanel } from '@/components/layout/focus-panel';
 import Link from 'next/link';
 
 interface OtherUser {
   id: string;
   username: string;
+  email: string | null;
   full_name: string;
   is_active: boolean;
+  password_set?: boolean;
   created_at: string;
 }
 
@@ -36,9 +38,10 @@ export default function OthersPage() {
   const [showCreatePanel, setShowCreatePanel] = useState(false);
   const [showBulkPanel, setShowBulkPanel] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'danger'; text: string } | null>(null);
 
   const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
   const [error, setError] = useState('');
 
@@ -74,7 +77,7 @@ export default function OthersPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           username,
-          password,
+          email,
           full_name: fullName,
           role: 'other',
         }),
@@ -90,6 +93,10 @@ export default function OthersPage() {
 
       setOthers([json.user, ...others]);
       setShowCreatePanel(false);
+      setMessage({
+        type: json.invite_error ? 'danger' : 'success',
+        text: json.invite_error || 'Staff user created and invite sent.',
+      });
       resetForm();
     } catch (err) {
       console.error('Failed to create staff user:', err);
@@ -151,14 +158,13 @@ export default function OthersPage() {
 
   const resetForm = () => {
     setUsername('');
-    setPassword('');
+    setEmail('');
     setFullName('');
     setError('');
   };
 
   const openCreatePanel = () => {
     resetForm();
-    setPassword(generatePassword(8));
     setShowCreatePanel(true);
   };
 
@@ -210,6 +216,11 @@ export default function OthersPage() {
             description="Manage staff user accounts"
           />
           <CardContent>
+            {message && (
+              <div className={`mb-4 rounded-lg px-4 py-3 text-sm ${message.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-600 border border-red-200'}`}>
+                {message.text}
+              </div>
+            )}
             {loading ? (
               <div className="space-y-2">
                 {[...Array(5)].map((_, i) => (
@@ -229,9 +240,10 @@ export default function OthersPage() {
                   <TableRow>
                     <TableHead>Staff User</TableHead>
                     <TableHead>Username</TableHead>
+                    <TableHead>Email</TableHead>
                     <TableHead>Created</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="w-20">Actions</TableHead>
+                    <TableHead className="w-32">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -244,24 +256,44 @@ export default function OthersPage() {
                         </div>
                       </TableCell>
                       <TableCell className="text-slate-400">@{other.username}</TableCell>
+                      <TableCell className="text-slate-500">{other.email || '-'}</TableCell>
                       <TableCell className="text-slate-400">{formatDate(other.created_at)}</TableCell>
                       <TableCell>
                         <Badge variant={other.is_active ? 'success' : 'danger'}>
                           {other.is_active ? 'Active' : 'Inactive'}
                         </Badge>
+                        {other.password_set === false && (
+                          <span className="ml-2 text-xs text-amber-600">Invite pending</span>
+                        )}
                       </TableCell>
                       <TableCell>
-                        <button
-                          onClick={() => toggleActive(other)}
-                          className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-                          title={other.is_active ? 'Deactivate' : 'Activate'}
-                        >
-                          {other.is_active ? (
-                            <ToggleRight className="w-5 h-5 text-green-400" />
-                          ) : (
-                            <ToggleLeft className="w-5 h-5 text-slate-400" />
-                          )}
-                        </button>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => toggleActive(other)}
+                            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                            title={other.is_active ? 'Deactivate' : 'Activate'}
+                          >
+                            {other.is_active ? (
+                              <ToggleRight className="w-5 h-5 text-green-400" />
+                            ) : (
+                              <ToggleLeft className="w-5 h-5 text-slate-400" />
+                            )}
+                          </button>
+                          <button
+                            onClick={() => handleAccessHelp(other)}
+                            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                            title={other.password_set === false ? 'Resend invite' : 'Send reset code'}
+                          >
+                            <KeyRound className="w-4 h-4 text-blue-600" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(other)}
+                            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4 text-red-500" />
+                          </button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -276,14 +308,14 @@ export default function OthersPage() {
         isOpen={showCreatePanel}
         onClose={() => setShowCreatePanel(false)}
         title="Create Staff User"
-        subtitle="Issue credentials for a staff member."
+        subtitle="Send an invite so they can set their password."
         footer={(
           <div className="flex justify-end gap-3">
             <Button type="button" variant="ghost" onClick={() => setShowCreatePanel(false)}>
               Cancel
             </Button>
             <Button type="submit" form="create-staff-form" loading={creating}>
-              Create Staff User
+              Send Invite
             </Button>
           </div>
         )}
@@ -294,6 +326,7 @@ export default function OthersPage() {
             label="Full Name"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
+            placeholder="Arjuna"
             required
           />
           <Input
@@ -303,22 +336,15 @@ export default function OthersPage() {
             onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
             required
           />
-          <div>
-            <Input
-              id="password"
-              label="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-            <button
-              type="button"
-              onClick={() => setPassword(generatePassword(8))}
-              className="text-sm text-blue-600 hover:text-blue-500 mt-1"
-            >
-              Generate new password
-            </button>
-          </div>
+          <Input
+            id="email"
+            label="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            type="email"
+            placeholder="arjuna@example.com"
+            required
+          />
 
           {error && (
             <div className="bg-red-900/30 border border-red-800 text-red-400 px-4 py-3 rounded-lg text-sm">
@@ -345,13 +371,13 @@ export default function OthersPage() {
       >
         <div className="space-y-4">
           <p className="text-sm text-slate-400">
-            Paste CSV data: <code className="text-blue-600">username,password,full_name</code>
+            Paste CSV data: <code className="text-blue-600">username,email,full_name</code>
           </p>
           <Textarea
             id="csvData"
             value={csvData}
             onChange={(e) => setCsvData(e.target.value)}
-            placeholder="john_doe,pass123,John Doe"
+            placeholder="arjuna,arjuna@example.com,Arjuna Singh"
             rows={8}
           />
 
@@ -374,3 +400,51 @@ export default function OthersPage() {
     </div>
   );
 }
+  const handleDelete = async (other: OtherUser) => {
+    if (!confirm(`Delete ${other.full_name}? This will remove the account permanently.`)) return;
+    try {
+      const res = await fetch(`/api/users/${other.id}`, { method: 'DELETE' });
+      const json = await res.json();
+      if (json.success) {
+        setOthers(others.filter((o) => o.id !== other.id));
+        setMessage({ type: 'success', text: 'Staff user deleted.' });
+      } else {
+        setMessage({ type: 'danger', text: json.error || 'Failed to delete staff user.' });
+      }
+    } catch {
+      setMessage({ type: 'danger', text: 'Failed to delete staff user.' });
+    }
+  };
+
+  const handleAccessHelp = async (other: OtherUser) => {
+    setMessage(null);
+    try {
+      if (!other.email) {
+        setMessage({ type: 'danger', text: 'No email on file for this user.' });
+        return;
+      }
+
+      if (other.password_set === false) {
+        const res = await fetch('/api/auth/invite', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: other.id }),
+        });
+        const json = await res.json();
+        if (!json.success) throw new Error(json.error);
+        setMessage({ type: 'success', text: 'Invite resent.' });
+        return;
+      }
+
+      const res = await fetch('/api/auth/forgot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: other.email }),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error);
+      setMessage({ type: 'success', text: 'Password reset code sent.' });
+    } catch {
+      setMessage({ type: 'danger', text: 'Failed to send access help.' });
+    }
+  };

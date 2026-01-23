@@ -16,7 +16,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select } from '@/components/ui/select';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Badge } from '@/components/ui/badge';
-import { Plus, BookOpen, Layers, PlayCircle, Edit, Trash2, Eye } from 'lucide-react';
+import { Plus, BookOpen, Layers, PlayCircle, Edit, Trash2, Eye, Upload } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { FocusPanel } from '@/components/layout/focus-panel';
@@ -54,6 +54,8 @@ export default function CoursesPage() {
   const [description, setDescription] = useState('');
   const [indexId, setIndexId] = useState('');
   const [thumbnailUrl, setThumbnailUrl] = useState('');
+  const [thumbnailUploading, setThumbnailUploading] = useState(false);
+  const [thumbnailProgress, setThumbnailProgress] = useState(0);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -82,6 +84,10 @@ export default function CoursesPage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    if (thumbnailUploading) {
+      setError('Please wait for the thumbnail upload to finish.');
+      return;
+    }
     setSaving(true);
 
     try {
@@ -140,6 +146,8 @@ export default function CoursesPage() {
     setDescription('');
     setIndexId(indexes[0]?.id || '');
     setThumbnailUrl('');
+    setThumbnailUploading(false);
+    setThumbnailProgress(0);
     setError('');
     setShowPanel(true);
   };
@@ -150,8 +158,51 @@ export default function CoursesPage() {
     setDescription(course.description || '');
     setIndexId(course.index_id);
     setThumbnailUrl(course.thumbnail_url || '');
+    setThumbnailUploading(false);
+    setThumbnailProgress(0);
     setError('');
     setShowPanel(true);
+  };
+
+  const handleThumbnailUpload = async (file: File) => {
+    setThumbnailUploading(true);
+    setThumbnailProgress(0);
+    setError('');
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const uploadResult = await new Promise<{ url: string }>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/thumbnails');
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            setThumbnailProgress(Math.round((event.loaded / event.total) * 100));
+          }
+        };
+        xhr.onload = () => {
+          try {
+            const json = JSON.parse(xhr.responseText);
+            if (json.success && json.url) {
+              resolve({ url: json.url });
+            } else {
+              reject(new Error(json.error || 'Upload failed'));
+            }
+          } catch (err) {
+            reject(err);
+          }
+        };
+        xhr.onerror = () => reject(new Error('Upload failed'));
+        xhr.send(formData);
+      });
+
+      setThumbnailUrl(uploadResult.url);
+    } catch {
+      setError('Failed to upload thumbnail');
+    } finally {
+      setThumbnailUploading(false);
+    }
   };
 
   const closeModal = () => {
@@ -358,13 +409,35 @@ export default function CoursesPage() {
             placeholder="Brief description of this course..."
             rows={3}
           />
-          <Input
-            id="thumbnailUrl"
-            label="Thumbnail URL (optional)"
-            value={thumbnailUrl}
-            onChange={(e) => setThumbnailUrl(e.target.value)}
-            placeholder="https://..."
-          />
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-slate-700">Thumbnail (optional)</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) handleThumbnailUpload(file);
+              }}
+              className="block w-full text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200"
+            />
+            {thumbnailUploading && (
+              <div className="space-y-1">
+                <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-blue-600"
+                    style={{ width: `${thumbnailProgress}%` }}
+                  />
+                </div>
+                <p className="text-xs text-slate-500">{thumbnailProgress}% uploaded</p>
+              </div>
+            )}
+            {!thumbnailUploading && thumbnailUrl && (
+              <p className="text-xs text-emerald-600 flex items-center gap-2">
+                <Upload className="w-3 h-3" />
+                Thumbnail uploaded.
+              </p>
+            )}
+          </div>
 
           {error && (
             <div className="bg-red-900/30 border border-red-800 text-red-400 px-4 py-3 rounded-lg text-sm">

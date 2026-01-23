@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { section_id, title, description, youtube_url, order_index, duration_seconds } = body;
+    const { section_id, title, description, youtube_url, video_storage_path, video_mime_type, order_index, duration_seconds } = body;
 
     if (!section_id || !title?.trim()) {
       return NextResponse.json(
@@ -64,6 +64,8 @@ export async function POST(request: NextRequest) {
         title: title.trim(),
         description: description?.trim() || null,
         youtube_url: youtube_url?.trim() || null,
+        video_storage_path: video_storage_path || null,
+        video_mime_type: video_mime_type || null,
         order_index: orderIdx,
         duration_seconds: duration_seconds || 0,
       })
@@ -95,7 +97,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { id, title, description, youtube_url, order_index, duration_seconds } = body;
+    const { id, title, description, youtube_url, video_storage_path, video_mime_type, order_index, duration_seconds } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -109,7 +111,7 @@ export async function PATCH(request: NextRequest) {
     // Verify ownership
     const { data: lecture } = await supabase
       .from('lectures')
-      .select('id, section:sections(course:courses(created_by))')
+      .select('id, video_storage_path, section:sections(course:courses(created_by))')
       .eq('id', id)
       .single();
 
@@ -128,6 +130,8 @@ export async function PATCH(request: NextRequest) {
     if (title) updates.title = title.trim();
     if (description !== undefined) updates.description = description?.trim() || null;
     if (youtube_url !== undefined) updates.youtube_url = youtube_url?.trim() || null;
+    if (video_storage_path !== undefined) updates.video_storage_path = video_storage_path || null;
+    if (video_mime_type !== undefined) updates.video_mime_type = video_mime_type || null;
     if (typeof order_index === 'number') updates.order_index = order_index;
     if (typeof duration_seconds === 'number') updates.duration_seconds = duration_seconds;
 
@@ -139,6 +143,14 @@ export async function PATCH(request: NextRequest) {
       .single();
 
     if (error) throw error;
+
+    if (
+      lecture?.video_storage_path &&
+      typeof video_storage_path === 'string' &&
+      lecture.video_storage_path !== video_storage_path
+    ) {
+      await supabase.storage.from('lecture-videos').remove([lecture.video_storage_path]);
+    }
 
     return NextResponse.json({ success: true, lecture: updatedLecture });
   } catch (error) {
@@ -173,7 +185,7 @@ export async function DELETE(request: NextRequest) {
     // Verify ownership
     const { data: lecture } = await supabase
       .from('lectures')
-      .select('id, title, section:sections(course:courses(created_by))')
+      .select('id, title, video_storage_path, section:sections(course:courses(created_by))')
       .eq('id', id)
       .single();
 
@@ -194,6 +206,10 @@ export async function DELETE(request: NextRequest) {
       .eq('id', id);
 
     if (error) throw error;
+
+    if (lecture?.video_storage_path) {
+      await supabase.storage.from('lecture-videos').remove([lecture.video_storage_path]);
+    }
 
     await logActivity(user.id, 'deleted_lecture', 'lecture', id, {
       title: lecture.title,

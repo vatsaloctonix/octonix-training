@@ -114,6 +114,11 @@ export function validateUsername(username: string): boolean {
   return /^[a-zA-Z0-9_]{3,30}$/.test(username);
 }
 
+// Validate email address
+export function validateEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
 // Truncate text with ellipsis
 export function truncate(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text;
@@ -139,9 +144,9 @@ export function formatFileSize(bytes: number): string {
 }
 
 // Parse CSV for bulk user creation
-export function parseCSV(csvText: string): { username: string; password: string; full_name: string }[] {
+export function parseCSV(csvText: string): { username: string; email: string; full_name: string }[] {
   const lines = csvText.trim().split('\n');
-  const users: { username: string; password: string; full_name: string }[] = [];
+  const users: { username: string; email: string; full_name: string }[] = [];
 
   // Skip header if present
   const startIndex = lines[0].toLowerCase().includes('username') ? 1 : 0;
@@ -154,7 +159,7 @@ export function parseCSV(csvText: string): { username: string; password: string;
     if (parts.length >= 3) {
       users.push({
         username: parts[0],
-        password: parts[1],
+        email: parts[1],
         full_name: parts[2],
       });
     }

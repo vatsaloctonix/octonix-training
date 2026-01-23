@@ -16,16 +16,18 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@
 import { Badge } from '@/components/ui/badge';
 import { Avatar } from '@/components/ui/avatar';
 import { EmptyState } from '@/components/ui/empty-state';
-import { Plus, Users, ToggleLeft, ToggleRight, Upload } from 'lucide-react';
-import { formatDate, generatePassword, parseCSV } from '@/lib/utils';
+import { Plus, Users, ToggleLeft, ToggleRight, Upload, Trash2, KeyRound } from 'lucide-react';
+import { formatDate, parseCSV } from '@/lib/utils';
 import { FocusPanel } from '@/components/layout/focus-panel';
 import Link from 'next/link';
 
 interface Candidate {
   id: string;
   username: string;
+  email: string | null;
   full_name: string;
   is_active: boolean;
+  password_set?: boolean;
   created_at: string;
 }
 
@@ -36,10 +38,11 @@ export default function CandidatesPage() {
   const [showCreatePanel, setShowCreatePanel] = useState(false);
   const [showBulkPanel, setShowBulkPanel] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'danger'; text: string } | null>(null);
 
   // Single create form
   const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
   const [error, setError] = useState('');
 
@@ -76,7 +79,7 @@ export default function CandidatesPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           username,
-          password,
+          email,
           full_name: fullName,
           role: 'candidate',
         }),
@@ -92,6 +95,10 @@ export default function CandidatesPage() {
 
       setCandidates([json.user, ...candidates]);
       setShowCreatePanel(false);
+      setMessage({
+        type: json.invite_error ? 'danger' : 'success',
+        text: json.invite_error || 'Candidate created and invite sent.',
+      });
       resetForm();
     } catch (err) {
       console.error('Failed to create candidate:', err);
@@ -154,14 +161,13 @@ export default function CandidatesPage() {
 
   const resetForm = () => {
     setUsername('');
-    setPassword('');
+    setEmail('');
     setFullName('');
     setError('');
   };
 
   const openCreatePanel = () => {
     resetForm();
-    setPassword(generatePassword(8));
     setShowCreatePanel(true);
   };
 
@@ -213,6 +219,11 @@ export default function CandidatesPage() {
             description="Manage your candidate accounts"
           />
           <CardContent>
+            {message && (
+              <div className={`mb-4 rounded-lg px-4 py-3 text-sm ${message.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-600 border border-red-200'}`}>
+                {message.text}
+              </div>
+            )}
             {loading ? (
               <div className="space-y-2">
                 {[...Array(5)].map((_, i) => (
@@ -232,9 +243,10 @@ export default function CandidatesPage() {
                   <TableRow>
                     <TableHead>Candidate</TableHead>
                     <TableHead>Username</TableHead>
+                    <TableHead>Email</TableHead>
                     <TableHead>Created</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="w-20">Actions</TableHead>
+                    <TableHead className="w-32">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -247,24 +259,44 @@ export default function CandidatesPage() {
                         </div>
                       </TableCell>
                       <TableCell className="text-slate-400">@{candidate.username}</TableCell>
+                      <TableCell className="text-slate-500">{candidate.email || '-'}</TableCell>
                       <TableCell className="text-slate-400">{formatDate(candidate.created_at)}</TableCell>
                       <TableCell>
                         <Badge variant={candidate.is_active ? 'success' : 'danger'}>
                           {candidate.is_active ? 'Active' : 'Inactive'}
                         </Badge>
+                        {candidate.password_set === false && (
+                          <span className="ml-2 text-xs text-amber-600">Invite pending</span>
+                        )}
                       </TableCell>
                       <TableCell>
-                        <button
-                          onClick={() => toggleActive(candidate)}
-                          className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-                          title={candidate.is_active ? 'Deactivate' : 'Activate'}
-                        >
-                          {candidate.is_active ? (
-                            <ToggleRight className="w-5 h-5 text-green-400" />
-                          ) : (
-                            <ToggleLeft className="w-5 h-5 text-slate-400" />
-                          )}
-                        </button>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => toggleActive(candidate)}
+                            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                            title={candidate.is_active ? 'Deactivate' : 'Activate'}
+                          >
+                            {candidate.is_active ? (
+                              <ToggleRight className="w-5 h-5 text-green-400" />
+                            ) : (
+                              <ToggleLeft className="w-5 h-5 text-slate-400" />
+                            )}
+                          </button>
+                          <button
+                            onClick={() => handleAccessHelp(candidate)}
+                            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                            title={candidate.password_set === false ? 'Resend invite' : 'Send reset code'}
+                          >
+                            <KeyRound className="w-4 h-4 text-blue-600" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(candidate)}
+                            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4 text-red-500" />
+                          </button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -280,14 +312,14 @@ export default function CandidatesPage() {
         isOpen={showCreatePanel}
         onClose={() => setShowCreatePanel(false)}
         title="Create Candidate"
-        subtitle="Add a learner and share credentials instantly."
+        subtitle="Send an invite so the learner can set their password."
         footer={(
           <div className="flex justify-end gap-3">
             <Button type="button" variant="ghost" onClick={() => setShowCreatePanel(false)}>
               Cancel
             </Button>
             <Button type="submit" form="create-candidate-form" loading={creating}>
-              Create Candidate
+              Send Invite
             </Button>
           </div>
         )}
@@ -298,7 +330,7 @@ export default function CandidatesPage() {
             label="Full Name"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
-            placeholder="John Doe"
+            placeholder="Arjuna"
             required
           />
           <Input
@@ -309,22 +341,15 @@ export default function CandidatesPage() {
             placeholder="john_doe"
             required
           />
-          <div>
-            <Input
-              id="password"
-              label="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-            <button
-              type="button"
-              onClick={() => setPassword(generatePassword(8))}
-              className="text-sm text-blue-600 hover:text-blue-500 mt-1"
-            >
-              Generate new password
-            </button>
-          </div>
+          <Input
+            id="email"
+            label="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="arjuna@example.com"
+            type="email"
+            required
+          />
 
           {error && (
             <div className="bg-red-900/30 border border-red-800 text-red-400 px-4 py-3 rounded-lg text-sm">
@@ -354,14 +379,14 @@ export default function CandidatesPage() {
       >
         <div className="space-y-4">
           <p className="text-sm text-slate-400">
-            Paste CSV data with format: <code className="text-blue-600">username,password,full_name</code>
+            Paste CSV data with format: <code className="text-blue-600">username,email,full_name</code>
           </p>
           <Textarea
             id="csvData"
             label="CSV Data"
             value={csvData}
             onChange={(e) => setCsvData(e.target.value)}
-            placeholder="john_doe,pass123,John Doe&#10;jane_doe,pass456,Jane Doe"
+            placeholder="arjuna,arjuna@example.com,Arjuna Singh"
             rows={8}
           />
 
@@ -392,3 +417,51 @@ export default function CandidatesPage() {
     </div>
   );
 }
+  const handleDelete = async (candidate: Candidate) => {
+    if (!confirm(`Delete ${candidate.full_name}? This will remove the account permanently.`)) return;
+    try {
+      const res = await fetch(`/api/users/${candidate.id}`, { method: 'DELETE' });
+      const json = await res.json();
+      if (json.success) {
+        setCandidates(candidates.filter((c) => c.id !== candidate.id));
+        setMessage({ type: 'success', text: 'Candidate deleted.' });
+      } else {
+        setMessage({ type: 'danger', text: json.error || 'Failed to delete candidate.' });
+      }
+    } catch {
+      setMessage({ type: 'danger', text: 'Failed to delete candidate.' });
+    }
+  };
+
+  const handleAccessHelp = async (candidate: Candidate) => {
+    setMessage(null);
+    try {
+      if (!candidate.email) {
+        setMessage({ type: 'danger', text: 'No email on file for this candidate.' });
+        return;
+      }
+
+      if (candidate.password_set === false) {
+        const res = await fetch('/api/auth/invite', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: candidate.id }),
+        });
+        const json = await res.json();
+        if (!json.success) throw new Error(json.error);
+        setMessage({ type: 'success', text: 'Invite resent.' });
+        return;
+      }
+
+      const res = await fetch('/api/auth/forgot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: candidate.email }),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error);
+      setMessage({ type: 'success', text: 'Password reset code sent.' });
+    } catch {
+      setMessage({ type: 'danger', text: 'Failed to send access help.' });
+    }
+  };

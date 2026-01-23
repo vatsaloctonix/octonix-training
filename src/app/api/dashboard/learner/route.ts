@@ -92,12 +92,42 @@ export async function GET() {
         description: course.description,
         thumbnail_url: course.thumbnail_url,
         index_name: (course.index as { name: string })?.name,
+        index_id: (course.index as { id: string })?.id,
         section_count: sections.length,
         lecture_count: totalLectures,
         completed_lectures: completedLectures,
         total_duration: totalDuration,
         completion_percentage: totalLectures > 0 ? Math.round((completedLectures / totalLectures) * 100) : 0,
       };
+    });
+
+    const indexMap = new Map<string, {
+      id: string;
+      name: string;
+      course_count: number;
+      completed_courses: number;
+      total_lectures: number;
+      completed_lectures: number;
+    }>();
+
+    coursesWithProgress.forEach((course) => {
+      if (!course.index_id) return;
+      const existing = indexMap.get(course.index_id);
+      if (!existing) {
+        indexMap.set(course.index_id, {
+          id: course.index_id,
+          name: course.index_name || 'Untitled',
+          course_count: 1,
+          completed_courses: course.completion_percentage === 100 ? 1 : 0,
+          total_lectures: course.lecture_count,
+          completed_lectures: course.completed_lectures,
+        });
+      } else {
+        existing.course_count += 1;
+        existing.completed_courses += course.completion_percentage === 100 ? 1 : 0;
+        existing.total_lectures += course.lecture_count;
+        existing.completed_lectures += course.completed_lectures;
+      }
     });
 
     // Overall stats
@@ -151,6 +181,7 @@ export async function GET() {
         completed_lectures: completedLectures,
         total_time_spent: totalTimeSpent,
         current_streak: streak,
+        assigned_indexes: Array.from(indexMap.values()),
         assigned_courses: coursesWithProgress,
       },
     });

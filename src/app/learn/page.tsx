@@ -31,11 +31,21 @@ interface CourseWithProgress {
   description: string | null;
   thumbnail_url: string | null;
   index_name: string;
+  index_id?: string;
   section_count: number;
   lecture_count: number;
   completed_lectures: number;
   total_duration: number;
   completion_percentage: number;
+}
+
+interface AssignedIndex {
+  id: string;
+  name: string;
+  course_count: number;
+  completed_courses: number;
+  total_lectures: number;
+  completed_lectures: number;
 }
 
 interface DashboardData {
@@ -45,6 +55,7 @@ interface DashboardData {
   completed_lectures: number;
   total_time_spent: number;
   current_streak: number;
+  assigned_indexes?: AssignedIndex[];
   assigned_courses: CourseWithProgress[];
 }
 
@@ -52,6 +63,7 @@ export default function LearnDashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [selectedIndex, setSelectedIndex] = useState<string>('all');
 
   useEffect(() => {
     fetchDashboard();
@@ -85,6 +97,7 @@ export default function LearnDashboardPage() {
   }
 
   const nextCourse = data?.assigned_courses.find((course) => course.completion_percentage < 100) || null;
+  const indexOptions = data?.assigned_indexes || [];
 
   return (
     <div>
@@ -153,12 +166,15 @@ export default function LearnDashboardPage() {
             {(() => {
               const term = search.trim().toLowerCase();
               const courses = data?.assigned_courses || [];
+              const indexFiltered = selectedIndex === 'all'
+                ? courses
+                : courses.filter((course) => course.index_id === selectedIndex);
               const filteredCourses = term
-                ? courses.filter((course) =>
+                ? indexFiltered.filter((course) =>
                     course.title.toLowerCase().includes(term) ||
                     course.index_name.toLowerCase().includes(term)
                   )
-                : courses;
+                : indexFiltered;
 
               if (filteredCourses.length === 0) {
                 return (
@@ -171,7 +187,35 @@ export default function LearnDashboardPage() {
               }
 
               return (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="space-y-4">
+                  {indexOptions.length > 1 && (
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => setSelectedIndex('all')}
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium border ${
+                          selectedIndex === 'all'
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'bg-white/70 text-slate-600 border-slate-200 hover:border-blue-200'
+                        }`}
+                      >
+                        All indexes
+                      </button>
+                      {indexOptions.map((index) => (
+                        <button
+                          key={index.id}
+                          onClick={() => setSelectedIndex(index.id)}
+                          className={`px-3 py-1.5 rounded-full text-xs font-medium border ${
+                            selectedIndex === index.id
+                              ? 'bg-blue-600 text-white border-blue-600'
+                              : 'bg-white/70 text-slate-600 border-slate-200 hover:border-blue-200'
+                          }`}
+                        >
+                          {index.name} ({index.completed_courses}/{index.course_count})
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredCourses.map((course) => (
                     <Link
                       key={course.id}
@@ -180,14 +224,14 @@ export default function LearnDashboardPage() {
                     >
                       <div className="bg-white/70 border border-white/60 rounded-2xl overflow-hidden hover:border-blue-200 transition-colors backdrop-blur-xl shadow-sm group">
                         {/* Thumbnail */}
-                        <div className="relative h-32 bg-gradient-to-br from-blue-100 to-white flex items-center justify-center">
+                        <div className="relative aspect-video bg-slate-100 flex items-center justify-center">
                           {course.thumbnail_url ? (
                             <Image
                               src={course.thumbnail_url}
                               alt={course.title}
                               fill
                               sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
-                              className="object-cover"
+                              className="object-contain"
                               unoptimized
                             />
                           ) : (
@@ -244,6 +288,7 @@ export default function LearnDashboardPage() {
                       </div>
                     </Link>
                   ))}
+                  </div>
                 </div>
               );
             })()}

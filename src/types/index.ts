@@ -32,11 +32,13 @@ export type UserRole = 'admin' | 'trainer' | 'crm' | 'candidate' | 'other';
 export interface User {
   id: string;
   username: string;
+  email: string | null;
   password_hash: string;
   role: UserRole;
   full_name: string;
   created_by: string | null; // null for admin
   is_active: boolean;
+  password_set: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -45,10 +47,12 @@ export interface User {
 export interface SafeUser {
   id: string;
   username: string;
+  email: string | null;
   role: UserRole;
   full_name: string;
   created_by: string | null;
   is_active: boolean;
+  password_set?: boolean;
   created_at: string;
 }
 
@@ -93,6 +97,9 @@ export interface Lecture {
   title: string;
   description: string | null;
   youtube_url: string | null;
+  video_storage_path?: string | null;
+  video_mime_type?: string | null;
+  video_url?: string | null;
   order_index: number;
   duration_seconds: number;
   created_at: string;
@@ -147,6 +154,25 @@ export interface UserSession {
   login_at: string;
   logout_at: string | null;
   ip_address: string | null;
+}
+
+export interface UserInvite {
+  id: string;
+  user_id: string;
+  email: string;
+  token: string;
+  created_by: string | null;
+  created_at: string;
+  used_at: string | null;
+}
+
+export interface PasswordReset {
+  id: string;
+  user_id: string;
+  email: string;
+  code: string;
+  created_at: string;
+  used_at: string | null;
 }
 
 // Activity log for admin dashboard
@@ -241,7 +267,7 @@ export interface LoginResponse {
 
 export interface CreateUserRequest {
   username: string;
-  password: string;
+  email: string;
   full_name: string;
   role: UserRole;
 }
@@ -269,6 +295,8 @@ export interface CreateLectureRequest {
   title: string;
   description?: string;
   youtube_url?: string;
+  video_storage_path?: string;
+  video_mime_type?: string;
   order_index: number;
   duration_seconds?: number;
 }
@@ -286,7 +314,7 @@ export interface AssignIndexRequest {
 export interface BulkCreateUsersRequest {
   users: {
     username: string;
-    password: string;
+    email: string;
     full_name: string;
   }[];
   role: 'candidate' | 'other';
@@ -309,6 +337,10 @@ export interface AdminDashboardMetrics {
   total_others: number;
   total_courses: number;
   total_active_users: number;
+  total_inactive_users?: number;
+  active_users_last_7_days?: number;
+  total_completed_lectures?: number;
+  total_time_spent?: number;
   recent_activities: ActivityLog[];
   trainers: TrainerStats[];
   crms: CRMStats[];
@@ -321,6 +353,9 @@ export interface TrainerDashboardMetrics {
   total_lectures: number;
   total_assignments: number;
   avg_completion_rate: number;
+  active_last_7_days?: number;
+  stalled_candidates?: number;
+  total_time_spent?: number;
   candidates: UserWithProgress[];
   recent_activities: ActivityLog[];
 }
@@ -332,6 +367,9 @@ export interface CRMDashboardMetrics {
   total_lectures: number;
   total_assignments: number;
   avg_completion_rate: number;
+  active_last_7_days?: number;
+  stalled_others?: number;
+  total_time_spent?: number;
   others: UserWithProgress[];
   recent_activities: ActivityLog[];
 }
@@ -343,5 +381,13 @@ export interface LearnerDashboardMetrics {
   completed_lectures: number;
   total_time_spent: number;
   current_streak: number;
+  assigned_indexes?: {
+    id: string;
+    name: string;
+    course_count: number;
+    completed_courses: number;
+    total_lectures: number;
+    completed_lectures: number;
+  }[];
   assigned_courses: CourseWithDetails[];
 }

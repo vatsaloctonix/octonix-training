@@ -6,7 +6,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
 import { getCurrentUser, hashPassword, logActivity, canManageRole } from '@/lib/auth';
-import { validateUsername, validatePassword } from '@/lib/utils';
+import { validateUsername, validateEmail, generatePassword } from '@/lib/utils';
+import { sendEmail } from '@/lib/email';
+import crypto from 'crypto';
 import type { UserRole } from '@/types';
 
 export async function POST(request: NextRequest) {
@@ -18,7 +20,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const { users, role } = body as {
-      users: { username: string; password: string; full_name: string }[];
+      users: { username: string; email: string; full_name: string }[];
       role: UserRole;
     };
 
@@ -43,7 +45,7 @@ export async function POST(request: NextRequest) {
 
     // Process each user
     for (const userData of users) {
-      const { username, password, full_name } = userData;
+      const { username, email, full_name } = userData;
 
       // Validate
       if (!validateUsername(username)) {
@@ -55,11 +57,11 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
-      if (!validatePassword(password)) {
+      if (!validateEmail(email)) {
         results.push({
           success: false,
           username,
-          error: 'Password too short (min 6 characters)',
+          error: 'Invalid email address',
         });
         continue;
       }
@@ -68,30 +70,33 @@ export async function POST(request: NextRequest) {
       const { data: existing } = await supabase
         .from('users')
         .select('id')
-        .eq('username', username.toLowerCase().trim())
+        .or(`username.eq.${username.toLowerCase().trim()},email.eq.${email.toLowerCase().trim()}`)
         .single();
 
       if (existing) {
         results.push({
           success: false,
           username,
-          error: 'Username already exists',
+          error: 'Username or email already exists',
         });
         continue;
       }
 
       // Create user
-      const password_hash = await hashPassword(password);
+      const tempPassword = generatePassword(12);
+      const password_hash = await hashPassword(tempPassword);
       const { data: newUser, error } = await supabase
         .from('users')
         .insert({
           username: username.toLowerCase().trim(),
           password_hash,
           full_name: full_name.trim(),
+          email: email.toLowerCase().trim(),
           role,
           created_by: user.id,
+          password_set: false,
         })
-        .select('id')
+        .select('id, email, full_name')
         .single();
 
       if (error) {
@@ -101,6 +106,32 @@ export async function POST(request: NextRequest) {
           error: 'Database error',
         });
       } else {
+        const inviteToken = crypto.randomUUID();
+        await supabase.from('user_invites').insert({
+          user_id: newUser.id,
+          email: newUser.email,
+          token: inviteToken,
+          created_by: user.id,
+        });
+
+        const appUrl = process.env.APP_URL || new URL(request.url).origin;
+        const inviteLink = `${appUrl}/invite/${inviteToken}`;
+
+        try {
+          await sendEmail({
+            to: newUser.email,
+            subject: 'Set up your LearnFlow account',
+            html: `
+              <p>Hi ${newUser.full_name},</p>
+              <p>You have been invited to LearnFlow. Click the link below to create your password:</p>
+              <p><a href="${inviteLink}">${inviteLink}</a></p>
+            `,
+            text: `Set your password here: ${inviteLink}`,
+          });
+        } catch (emailError) {
+          console.error('Invite email failed:', emailError);
+        }
+
         results.push({ success: true, username });
         created.push(newUser.id);
       }

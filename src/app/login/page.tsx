@@ -69,7 +69,7 @@ export default function LoginPage() {
             priority
           />
           <p className="text-slate-600 mt-4 max-w-md">
-            A focused training workspace for admins, trainers, CRM teams, and learners.
+            Beyond a job offer letter
           </p>
         </div>
 
@@ -77,13 +77,13 @@ export default function LoginPage() {
           <div className="bg-white/70 border border-white/60 rounded-2xl p-5 backdrop-blur-xl">
             <p className="font-medium text-slate-900 mb-2">What you can do here</p>
             <ul className="space-y-2">
-              <li>Provision access for every role in minutes.</li>
-              <li>Create structured content with zero friction.</li>
-              <li>Track completion and learner momentum.</li>
+              <li>- Learn how to crack interviews</li>
+              <li>- Change your behaviour for interviews</li>
+              <li>- Watch excellent interview replays</li>
             </ul>
           </div>
           <p className="text-xs text-slate-500">
-            Need access? Reach out to your administrator to get set up.
+            Please login using the credentials provided by your recruiter or trainer
           </p>
         </div>
       </div>
@@ -166,9 +166,11 @@ export default function LoginPage() {
             </form>
           </div>
 
-          <p className="text-center text-slate-500 text-sm mt-6">
-            Contact your administrator if you need access
-          </p>
+          <div className="text-center text-sm mt-6">
+            <a href="/forgot-password" className="text-blue-600 hover:text-blue-500">
+              Forgot your password?
+            </a>
+          </div>
         </div>
       </div>
     </div>

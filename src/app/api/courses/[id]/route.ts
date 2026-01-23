@@ -94,6 +94,23 @@ export async function GET(
       });
     }
 
+    // Attach signed URLs for uploaded videos
+    if (course.sections) {
+      await Promise.all(
+        course.sections.flatMap((section: { lectures: { video_storage_path?: string }[] }) =>
+          (section.lectures || []).map(async (lecture) => {
+            if (!lecture.video_storage_path) return;
+            const { data: signed, error: signedError } = await supabase.storage
+              .from('lecture-videos')
+              .createSignedUrl(lecture.video_storage_path, 60 * 60);
+            if (!signedError) {
+              (lecture as { video_url?: string | null }).video_url = signed?.signedUrl || null;
+            }
+          })
+        )
+      );
+    }
+
     return NextResponse.json({
       success: true,
       course: {

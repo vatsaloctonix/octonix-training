@@ -14,16 +14,18 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@
 import { Badge } from '@/components/ui/badge';
 import { Avatar } from '@/components/ui/avatar';
 import { EmptyState } from '@/components/ui/empty-state';
-import { Plus, UserCog, ToggleLeft, ToggleRight } from 'lucide-react';
-import { formatDate, generatePassword } from '@/lib/utils';
+import { Plus, UserCog, ToggleLeft, ToggleRight, Trash2, KeyRound } from 'lucide-react';
+import { formatDate } from '@/lib/utils';
 import { FocusPanel } from '@/components/layout/focus-panel';
 import { ActionDock } from '@/components/layout/action-dock';
 
 interface CRMUser {
   id: string;
   username: string;
+  email: string | null;
   full_name: string;
   is_active: boolean;
+  password_set?: boolean;
   created_at: string;
 }
 
@@ -33,9 +35,10 @@ export default function CRMPage() {
   const [search, setSearch] = useState('');
   const [showPanel, setShowPanel] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'danger'; text: string } | null>(null);
 
   const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
   const [error, setError] = useState('');
 
@@ -68,7 +71,7 @@ export default function CRMPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           username,
-          password,
+          email,
           full_name: fullName,
           role: 'crm',
         }),
@@ -84,6 +87,10 @@ export default function CRMPage() {
 
       setCrms([json.user, ...crms]);
       setShowPanel(false);
+      setMessage({
+        type: json.invite_error ? 'danger' : 'success',
+        text: json.invite_error || 'CRM user created and invite sent.',
+      });
       resetForm();
     } catch (err) {
       console.error('Failed to create CRM user:', err);
@@ -114,14 +121,13 @@ export default function CRMPage() {
 
   const resetForm = () => {
     setUsername('');
-    setPassword('');
+    setEmail('');
     setFullName('');
     setError('');
   };
 
   const openPanel = () => {
     resetForm();
-    setPassword(generatePassword(8));
     setShowPanel(true);
   };
 
@@ -159,6 +165,11 @@ export default function CRMPage() {
             description="Manage CRM user accounts and their access"
           />
           <CardContent>
+            {message && (
+              <div className={`mb-4 rounded-lg px-4 py-3 text-sm ${message.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-600 border border-red-200'}`}>
+                {message.text}
+              </div>
+            )}
             {loading ? (
               <div className="space-y-2">
                 {[...Array(5)].map((_, i) => (
@@ -178,9 +189,10 @@ export default function CRMPage() {
                   <TableRow>
                     <TableHead>CRM User</TableHead>
                     <TableHead>Username</TableHead>
+                    <TableHead>Email</TableHead>
                     <TableHead>Created</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="w-20">Actions</TableHead>
+                    <TableHead className="w-32">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -193,24 +205,44 @@ export default function CRMPage() {
                         </div>
                       </TableCell>
                       <TableCell className="text-slate-400">@{crm.username}</TableCell>
+                      <TableCell className="text-slate-500">{crm.email || '-'}</TableCell>
                       <TableCell className="text-slate-400">{formatDate(crm.created_at)}</TableCell>
                       <TableCell>
                         <Badge variant={crm.is_active ? 'success' : 'danger'}>
                           {crm.is_active ? 'Active' : 'Inactive'}
                         </Badge>
+                        {crm.password_set === false && (
+                          <span className="ml-2 text-xs text-amber-600">Invite pending</span>
+                        )}
                       </TableCell>
                       <TableCell>
-                        <button
-                          onClick={() => toggleActive(crm)}
-                          className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-                          title={crm.is_active ? 'Deactivate' : 'Activate'}
-                        >
-                          {crm.is_active ? (
-                            <ToggleRight className="w-5 h-5 text-green-400" />
-                          ) : (
-                            <ToggleLeft className="w-5 h-5 text-slate-400" />
-                          )}
-                        </button>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => toggleActive(crm)}
+                            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                            title={crm.is_active ? 'Deactivate' : 'Activate'}
+                          >
+                            {crm.is_active ? (
+                              <ToggleRight className="w-5 h-5 text-green-400" />
+                            ) : (
+                              <ToggleLeft className="w-5 h-5 text-slate-400" />
+                            )}
+                          </button>
+                          <button
+                            onClick={() => handleAccessHelp(crm)}
+                            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                            title={crm.password_set === false ? 'Resend invite' : 'Send reset code'}
+                          >
+                            <KeyRound className="w-4 h-4 text-blue-600" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(crm)}
+                            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4 text-red-500" />
+                          </button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -225,14 +257,14 @@ export default function CRMPage() {
         isOpen={showPanel}
         onClose={() => setShowPanel(false)}
         title="Create CRM User"
-        subtitle="Issue credentials for a CRM teammate."
+        subtitle="Send an invite so they can set their password."
         footer={(
           <div className="flex justify-end gap-3">
             <Button type="button" variant="ghost" onClick={() => setShowPanel(false)}>
               Cancel
             </Button>
             <Button type="submit" form="create-crm-form" loading={creating}>
-              Create CRM User
+              Send Invite
             </Button>
           </div>
         )}
@@ -243,7 +275,7 @@ export default function CRMPage() {
             label="Full Name"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
-            placeholder="Jane Smith"
+            placeholder="Arjuna"
             required
           />
           <Input
@@ -254,22 +286,15 @@ export default function CRMPage() {
             placeholder="jane_smith"
             required
           />
-          <div>
-            <Input
-              id="password"
-              label="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-            <button
-              type="button"
-              onClick={() => setPassword(generatePassword(8))}
-              className="text-sm text-blue-600 hover:text-blue-500 mt-1"
-            >
-              Generate new password
-            </button>
-          </div>
+          <Input
+            id="email"
+            label="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="arjuna@example.com"
+            type="email"
+            required
+          />
 
           {error && (
             <div className="bg-red-900/30 border border-red-800 text-red-400 px-4 py-3 rounded-lg text-sm">
@@ -281,3 +306,51 @@ export default function CRMPage() {
     </div>
   );
 }
+  const handleDelete = async (crm: CRMUser) => {
+    if (!confirm(`Delete ${crm.full_name}? This will remove the account permanently.`)) return;
+    try {
+      const res = await fetch(`/api/users/${crm.id}`, { method: 'DELETE' });
+      const json = await res.json();
+      if (json.success) {
+        setCrms(crms.filter((c) => c.id !== crm.id));
+        setMessage({ type: 'success', text: 'CRM user deleted.' });
+      } else {
+        setMessage({ type: 'danger', text: json.error || 'Failed to delete CRM user.' });
+      }
+    } catch {
+      setMessage({ type: 'danger', text: 'Failed to delete CRM user.' });
+    }
+  };
+
+  const handleAccessHelp = async (crm: CRMUser) => {
+    setMessage(null);
+    try {
+      if (!crm.email) {
+        setMessage({ type: 'danger', text: 'No email on file for this user.' });
+        return;
+      }
+
+      if (crm.password_set === false) {
+        const res = await fetch('/api/auth/invite', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: crm.id }),
+        });
+        const json = await res.json();
+        if (!json.success) throw new Error(json.error);
+        setMessage({ type: 'success', text: 'Invite resent.' });
+        return;
+      }
+
+      const res = await fetch('/api/auth/forgot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: crm.email }),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error);
+      setMessage({ type: 'success', text: 'Password reset code sent.' });
+    } catch {
+      setMessage({ type: 'danger', text: 'Failed to send access help.' });
+    }
+  };

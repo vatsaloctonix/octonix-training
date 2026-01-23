@@ -13,6 +13,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Select } from '@/components/ui/select';
+import { Progress } from '@/components/ui/progress';
 import { EmptyState } from '@/components/ui/empty-state';
 import { LectureFilesModal } from '@/components/content/lecture-files-modal';
 import {
@@ -35,6 +37,8 @@ interface Lecture {
   title: string;
   description: string | null;
   youtube_url: string | null;
+  video_storage_path?: string | null;
+  video_mime_type?: string | null;
   order_index: number;
   duration_seconds: number;
   files: LectureFile[];
@@ -73,6 +77,11 @@ export default function CRMCourseDetailPage() {
   const [lectureTitle, setLectureTitle] = useState('');
   const [lectureDescription, setLectureDescription] = useState('');
   const [lectureYoutubeUrl, setLectureYoutubeUrl] = useState('');
+  const [videoSource, setVideoSource] = useState<'youtube' | 'upload'>('youtube');
+  const [videoStoragePath, setVideoStoragePath] = useState('');
+  const [videoMimeType, setVideoMimeType] = useState('');
+  const [videoUploading, setVideoUploading] = useState(false);
+  const [videoUploadProgress, setVideoUploadProgress] = useState(0);
   const [lectureDuration, setLectureDuration] = useState(0);
 
   const [showFilesModal, setShowFilesModal] = useState(false);
@@ -172,9 +181,62 @@ export default function CRMCourseDetailPage() {
     setLectureTitle(lecture?.title || '');
     setLectureDescription(lecture?.description || '');
     setLectureYoutubeUrl(lecture?.youtube_url || '');
+    const existingVideoPath = lecture?.video_storage_path || '';
+    setVideoStoragePath(existingVideoPath);
+    setVideoMimeType(lecture?.video_mime_type || '');
+    setVideoSource(existingVideoPath ? 'upload' : 'youtube');
+    setVideoUploading(false);
+    setVideoUploadProgress(0);
     setLectureDuration(lecture?.duration_seconds || 0);
     setError('');
     setShowLectureModal(true);
+  };
+
+  const handleVideoUpload = async (file: File) => {
+    setVideoUploading(true);
+    setVideoUploadProgress(0);
+    setError('');
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      if (editingLecture?.id) {
+        formData.append('lecture_id', editingLecture.id);
+      }
+
+      const uploadResult = await new Promise<{ storage_path: string; mime_type: string }>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/videos');
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            const percent = Math.round((event.loaded / event.total) * 100);
+            setVideoUploadProgress(percent);
+          }
+        };
+        xhr.onload = () => {
+          try {
+            const json = JSON.parse(xhr.responseText);
+            if (json.success) {
+              resolve({ storage_path: json.storage_path, mime_type: json.mime_type });
+            } else {
+              reject(new Error(json.error || 'Upload failed'));
+            }
+          } catch (err) {
+            reject(err);
+          }
+        };
+        xhr.onerror = () => reject(new Error('Upload failed'));
+        xhr.send(formData);
+      });
+
+      setVideoStoragePath(uploadResult.storage_path);
+      setVideoMimeType(uploadResult.mime_type);
+      setVideoSource('upload');
+    } catch {
+      setError('Failed to upload video');
+    } finally {
+      setVideoUploading(false);
+    }
   };
 
   const handleSaveLecture = async (e: React.FormEvent) => {
@@ -182,10 +244,33 @@ export default function CRMCourseDetailPage() {
     setSaving(true);
 
     try {
+      if (videoUploading) {
+        setError('Please wait for the video upload to finish.');
+        setSaving(false);
+        return;
+      }
+      if (videoSource === 'upload' && !videoStoragePath) {
+        setError('Upload a video file or switch to YouTube URL.');
+        setSaving(false);
+        return;
+      }
+
+      const videoPayload = videoSource === 'upload'
+        ? {
+            youtube_url: null,
+            video_storage_path: videoStoragePath || null,
+            video_mime_type: videoMimeType || null,
+          }
+        : {
+            youtube_url: lectureYoutubeUrl || null,
+            video_storage_path: null,
+            video_mime_type: null,
+          };
+
       const method = editingLecture ? 'PATCH' : 'POST';
       const body = editingLecture
-        ? { id: editingLecture.id, title: lectureTitle, description: lectureDescription, youtube_url: lectureYoutubeUrl, duration_seconds: lectureDuration }
-        : { section_id: currentSectionId, title: lectureTitle, description: lectureDescription, youtube_url: lectureYoutubeUrl, duration_seconds: lectureDuration };
+        ? { id: editingLecture.id, title: lectureTitle, description: lectureDescription, ...videoPayload, duration_seconds: lectureDuration }
+        : { section_id: currentSectionId, title: lectureTitle, description: lectureDescription, ...videoPayload, duration_seconds: lectureDuration };
 
       const res = await fetch('/api/lectures', {
         method,
@@ -391,7 +476,41 @@ export default function CRMCourseDetailPage() {
         <form id="crm-lecture-form" onSubmit={handleSaveLecture} className="space-y-4">
           <Input id="lectureTitle" label="Lecture Title" value={lectureTitle} onChange={(e) => setLectureTitle(e.target.value)} required />
           <Textarea id="lectureDescription" label="Description" value={lectureDescription} onChange={(e) => setLectureDescription(e.target.value)} rows={3} />
-          <Input id="lectureYoutubeUrl" label="YouTube URL" value={lectureYoutubeUrl} onChange={(e) => setLectureYoutubeUrl(e.target.value)} />
+          <Select
+            id="videoSource"
+            label="Video Source"
+            value={videoSource}
+            onChange={(e) => setVideoSource(e.target.value as 'youtube' | 'upload')}
+            options={[
+              { value: 'youtube', label: 'YouTube URL' },
+              { value: 'upload', label: 'Upload Video' },
+            ]}
+          />
+          {videoSource === 'youtube' ? (
+            <Input id="lectureYoutubeUrl" label="YouTube URL" value={lectureYoutubeUrl} onChange={(e) => setLectureYoutubeUrl(e.target.value)} />
+          ) : (
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-slate-700">Upload Video</label>
+              <input
+                type="file"
+                accept="video/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleVideoUpload(file);
+                }}
+                className="block w-full text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200"
+              />
+              {videoUploading && (
+                <div className="space-y-1">
+                  <Progress value={videoUploadProgress} size="sm" />
+                  <p className="text-xs text-slate-500">{videoUploadProgress}% uploaded</p>
+                </div>
+              )}
+              {!videoUploading && videoStoragePath && (
+                <p className="text-xs text-emerald-600">Video uploaded.</p>
+              )}
+            </div>
+          )}
           <Input id="lectureDuration" label="Duration (minutes)" type="number" value={Math.floor(lectureDuration / 60)} onChange={(e) => setLectureDuration(parseInt(e.target.value || '0') * 60)} min={0} />
           {error && <div className="bg-red-900/30 border border-red-800 text-red-400 px-4 py-3 rounded-lg text-sm">{error}</div>}
         </form>

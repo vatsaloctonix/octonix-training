@@ -42,6 +42,9 @@ interface DashboardData {
   total_lectures: number;
   total_assignments: number;
   avg_completion_rate: number;
+  active_last_7_days: number;
+  stalled_others: number;
+  total_time_spent: number;
   others: OtherProgress[];
   recent_activities: ActivityLog[];
 }
@@ -55,6 +58,8 @@ interface ActivityLog {
 export default function CRMDashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showAllActivity, setShowAllActivity] = useState(false);
+  const [showAllStaff, setShowAllStaff] = useState(false);
 
   useEffect(() => {
     fetchDashboard();
@@ -92,7 +97,11 @@ export default function CRMDashboardPage() {
       <Header
         title="CRM Studio"
         subtitle="Guide staff learning and ship content without delays."
-        meta={[{ label: 'Time zone', value: 'ET' }]}
+        meta={[
+          { label: 'Time zone', value: 'ET' },
+          { label: 'Time spent', value: formatDuration(data?.total_time_spent || 0) },
+          { label: 'Active (7d)', value: String(data?.active_last_7_days || 0) },
+        ]}
         actions={(
           <ActionDock>
             <Link href="/crm/others">
@@ -109,7 +118,7 @@ export default function CRMDashboardPage() {
       />
 
       <div className="p-6 space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
           <StatsCard title="Staff Users" value={data?.total_others || 0} icon={Users} />
           <StatsCard title="Indexes" value={data?.total_indexes || 0} icon={FolderOpen} />
           <StatsCard title="Courses" value={data?.total_courses || 0} icon={BookOpen} />
@@ -119,6 +128,12 @@ export default function CRMDashboardPage() {
             value={data?.total_assignments || 0}
             icon={ClipboardList}
             description={`Avg completion ${data?.avg_completion_rate || 0}%`}
+          />
+          <StatsCard
+            title="Active (7d)"
+            value={data?.active_last_7_days || 0}
+            icon={Users}
+            description={`${data?.stalled_others || 0} stalled`}
           />
         </div>
 
@@ -137,7 +152,7 @@ export default function CRMDashboardPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data?.others?.map((other) => (
+                {(showAllStaff ? data?.others : data?.others?.slice(0, 8))?.map((other) => (
                   <TableRow key={other.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
@@ -170,6 +185,16 @@ export default function CRMDashboardPage() {
                 )}
               </TableBody>
             </Table>
+            {data?.others && data.others.length > 8 && (
+              <div className="px-6 py-4">
+                <button
+                  onClick={() => setShowAllStaff((prev) => !prev)}
+                  className="text-sm text-blue-600 hover:text-blue-500"
+                >
+                  {showAllStaff ? 'Show less' : 'Show more'}
+                </button>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -177,7 +202,7 @@ export default function CRMDashboardPage() {
           <CardHeader title="Recent Activity" description="Latest actions from your workspace" />
           <CardContent>
             <div className="space-y-3">
-              {data?.recent_activities?.slice(0, 8).map((activity) => (
+              {(showAllActivity ? data?.recent_activities : data?.recent_activities?.slice(0, 6))?.map((activity) => (
                 <div
                   key={activity.id}
                   className="flex items-center justify-between border-b border-slate-200/70 pb-3 last:border-0 last:pb-0"
@@ -192,6 +217,14 @@ export default function CRMDashboardPage() {
               ))}
               {(!data?.recent_activities || data.recent_activities.length === 0) && (
                 <p className="text-sm text-slate-500">No recent activity yet.</p>
+              )}
+              {data?.recent_activities && data.recent_activities.length > 6 && (
+                <button
+                  onClick={() => setShowAllActivity((prev) => !prev)}
+                  className="text-sm text-blue-600 hover:text-blue-500"
+                >
+                  {showAllActivity ? 'Show less' : 'Show more'}
+                </button>
               )}
             </div>
           </CardContent>

@@ -37,6 +37,7 @@ interface Lecture {
   title: string;
   description: string | null;
   youtube_url: string | null;
+  video_url?: string | null;
   order_index: number;
   duration_seconds: number;
   files: LectureFile[];
@@ -318,6 +319,14 @@ export default function CourseViewerPage() {
                           src={getYouTubeEmbedUrl(currentLecture.youtube_url) || ''}
                           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                           allowFullScreen
+                        />
+                      </div>
+                    ) : currentLecture.video_url ? (
+                      <div className="aspect-video bg-black">
+                        <video
+                          src={currentLecture.video_url}
+                          controls
+                          className="w-full h-full"
                         />
                       </div>
                     ) : (

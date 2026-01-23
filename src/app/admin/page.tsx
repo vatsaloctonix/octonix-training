@@ -21,7 +21,7 @@ import {
   BookOpen,
   Activity,
 } from 'lucide-react';
-import { getRelativeTime } from '@/lib/utils';
+import { formatDuration, getRelativeTime } from '@/lib/utils';
 import Link from 'next/link';
 
 interface DashboardData {
@@ -30,6 +30,11 @@ interface DashboardData {
   total_candidates: number;
   total_others: number;
   total_courses: number;
+  total_active_users?: number;
+  total_inactive_users: number;
+  active_users_last_7_days: number;
+  total_completed_lectures: number;
+  total_time_spent: number;
   trainers: TrainerStats[];
   crms: CRMStats[];
   recent_activities: ActivityLog[];
@@ -67,6 +72,7 @@ interface ActivityLog {
 export default function AdminDashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showAllActivity, setShowAllActivity] = useState(false);
 
   useEffect(() => {
     fetchDashboard();
@@ -128,7 +134,7 @@ export default function AdminDashboardPage() {
 
       <div className="p-6 space-y-6">
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
           <StatsCard
             title="Trainers"
             value={data?.total_trainers || 0}
@@ -154,7 +160,33 @@ export default function AdminDashboardPage() {
             value={data?.total_courses || 0}
             icon={BookOpen}
           />
+          <StatsCard
+            title="Active (7d)"
+            value={data?.active_users_last_7_days || 0}
+            description={`${data?.total_inactive_users || 0} inactive`}
+            icon={Users}
+          />
         </div>
+
+        <Card>
+          <CardHeader title="Platform Momentum" description="Engagement signals across all learners." />
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-slate-600">
+              <div className="rounded-lg border border-slate-200/70 bg-white/70 px-4 py-3">
+                <p className="text-xs uppercase tracking-wide text-slate-400">Lectures Completed</p>
+                <p className="text-slate-900 font-medium mt-1">{data?.total_completed_lectures || 0}</p>
+              </div>
+              <div className="rounded-lg border border-slate-200/70 bg-white/70 px-4 py-3">
+                <p className="text-xs uppercase tracking-wide text-slate-400">Total Time Spent</p>
+                <p className="text-slate-900 font-medium mt-1">{formatDuration(data?.total_time_spent || 0)}</p>
+              </div>
+              <div className="rounded-lg border border-slate-200/70 bg-white/70 px-4 py-3">
+                <p className="text-xs uppercase tracking-wide text-slate-400">Inactive Users</p>
+                <p className="text-slate-900 font-medium mt-1">{data?.total_inactive_users || 0}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Tables Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -260,7 +292,7 @@ export default function AdminDashboardPage() {
           />
           <CardContent>
             <div className="space-y-4">
-              {data?.recent_activities?.slice(0, 10).map((activity) => (
+              {(showAllActivity ? data?.recent_activities : data?.recent_activities?.slice(0, 6))?.map((activity) => (
                 <div
                   key={activity.id}
                   className="flex items-center gap-4 py-2 border-b border-slate-200/70 last:border-0"
@@ -282,6 +314,14 @@ export default function AdminDashboardPage() {
               ))}
               {(!data?.recent_activities || data.recent_activities.length === 0) && (
                 <p className="text-center text-slate-500 py-4">No recent activity</p>
+              )}
+              {data?.recent_activities && data.recent_activities.length > 6 && (
+                <button
+                  onClick={() => setShowAllActivity((prev) => !prev)}
+                  className="text-sm text-blue-600 hover:text-blue-500"
+                >
+                  {showAllActivity ? 'Show less' : 'Show more'}
+                </button>
               )}
             </div>
           </CardContent>

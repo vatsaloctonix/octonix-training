@@ -13,11 +13,13 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     username VARCHAR(30) UNIQUE NOT NULL,
+    email VARCHAR(255) UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     role VARCHAR(20) NOT NULL CHECK (role IN ('admin', 'trainer', 'crm', 'candidate', 'other')),
     full_name VARCHAR(100) NOT NULL,
     created_by UUID REFERENCES users(id) ON DELETE SET NULL,
     is_active BOOLEAN DEFAULT true,
+    password_set BOOLEAN DEFAULT true,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -26,6 +28,7 @@ CREATE TABLE users (
 CREATE INDEX idx_users_created_by ON users(created_by);
 CREATE INDEX idx_users_role ON users(role);
 CREATE INDEX idx_users_active ON users(is_active);
+CREATE INDEX idx_users_email ON users(email);
 
 -- =============================================================================
 -- INDEXES TABLE (Content categories: Setup, Training, etc.)
@@ -83,6 +86,8 @@ CREATE TABLE lectures (
     title VARCHAR(200) NOT NULL,
     description TEXT,
     youtube_url VARCHAR(500),
+    video_storage_path VARCHAR(500),
+    video_mime_type VARCHAR(100),
     order_index INTEGER NOT NULL DEFAULT 0,
     duration_seconds INTEGER DEFAULT 0,
     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -195,6 +200,39 @@ CREATE TABLE file_downloads (
     downloaded_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- =============================================================================
+-- USER INVITES TABLE (Invite flow for setting passwords)
+-- =============================================================================
+CREATE TABLE user_invites (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    email VARCHAR(255) NOT NULL,
+    token VARCHAR(255) UNIQUE NOT NULL,
+    created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    used_at TIMESTAMPTZ
+);
+
+CREATE INDEX idx_user_invites_user_id ON user_invites(user_id);
+CREATE INDEX idx_user_invites_email ON user_invites(email);
+CREATE INDEX idx_user_invites_token ON user_invites(token);
+
+-- =============================================================================
+-- PASSWORD RESET TABLE (Email code verification)
+-- =============================================================================
+CREATE TABLE password_resets (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    email VARCHAR(255) NOT NULL,
+    code VARCHAR(12) NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    used_at TIMESTAMPTZ
+);
+
+CREATE INDEX idx_password_resets_user_id ON password_resets(user_id);
+CREATE INDEX idx_password_resets_email ON password_resets(email);
+CREATE INDEX idx_password_resets_code ON password_resets(code);
+
 CREATE INDEX idx_file_downloads_user_id ON file_downloads(user_id);
 CREATE INDEX idx_file_downloads_file_id ON file_downloads(file_id);
 
@@ -298,6 +336,8 @@ ALTER TABLE lecture_progress ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE activity_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE file_downloads ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_invites ENABLE ROW LEVEL SECURITY;
+ALTER TABLE password_resets ENABLE ROW LEVEL SECURITY;
 
 -- For now, allow service role full access (API routes use service role)
 -- Client-side queries go through API routes for security
@@ -313,6 +353,8 @@ CREATE POLICY "Service role has full access to lecture_progress" ON lecture_prog
 CREATE POLICY "Service role has full access to user_sessions" ON user_sessions FOR ALL USING (true);
 CREATE POLICY "Service role has full access to activity_logs" ON activity_logs FOR ALL USING (true);
 CREATE POLICY "Service role has full access to file_downloads" ON file_downloads FOR ALL USING (true);
+CREATE POLICY "Service role has full access to user_invites" ON user_invites FOR ALL USING (true);
+CREATE POLICY "Service role has full access to password_resets" ON password_resets FOR ALL USING (true);
 
 -- =============================================================================
 -- STORAGE BUCKET FOR FILES
@@ -320,3 +362,14 @@ CREATE POLICY "Service role has full access to file_downloads" ON file_downloads
 -- Run this in Supabase Dashboard > Storage > Create bucket
 -- Bucket name: lecture-files
 -- Public: false
+
+-- =============================================================================
+-- STORAGE BUCKETS FOR MEDIA
+-- =============================================================================
+-- Thumbnails bucket:
+-- Bucket name: course-thumbnails
+-- Public: true (recommended for easy access)
+--
+-- Lecture videos bucket:
+-- Bucket name: lecture-videos
+-- Public: false (served via signed URLs)

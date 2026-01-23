@@ -5,7 +5,7 @@
 
 'use client';
 
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Sidebar } from './sidebar';
 import type { UserRole } from '@/types';
@@ -18,6 +18,7 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children, role, userName }: DashboardLayoutProps) {
   const router = useRouter();
+  const [collapsed, setCollapsed] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -30,8 +31,14 @@ export function DashboardLayout({ children, role, userName }: DashboardLayoutPro
 
   return (
     <div className="min-h-screen bg-transparent">
-      <Sidebar role={role} userName={userName} onLogout={handleLogout} />
-      <main className="ml-64 min-h-screen bg-transparent animate-fadeIn">
+      <Sidebar
+        role={role}
+        userName={userName}
+        collapsed={collapsed}
+        onToggle={() => setCollapsed((prev) => !prev)}
+        onLogout={handleLogout}
+      />
+      <main className={`min-h-screen bg-transparent animate-fadeIn ${collapsed ? 'ml-20' : 'ml-64'}`}>
         {children}
       </main>
     </div>

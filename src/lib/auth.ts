@@ -96,7 +96,7 @@ export async function getCurrentUser(): Promise<SafeUser | null> {
 
   const { data: user, error } = await supabase
     .from('users')
-    .select('id, username, role, full_name, created_by, is_active, created_at')
+    .select('id, username, email, role, full_name, created_by, is_active, password_set, created_at')
     .eq('id', sessionRecord.user_id)
     .eq('is_active', true)
     .single();

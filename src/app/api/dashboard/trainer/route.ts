@@ -88,6 +88,17 @@ export async function GET() {
       })
     );
 
+    const now = Date.now();
+    const activeLast7Days = candidatesWithProgress.filter((c) =>
+      c.last_active ? now - new Date(c.last_active).getTime() <= 7 * 24 * 60 * 60 * 1000 : false
+    ).length;
+
+    const stalledCandidates = candidatesWithProgress.filter((c) =>
+      !c.last_active || now - new Date(c.last_active).getTime() > 14 * 24 * 60 * 60 * 1000
+    ).length;
+
+    const totalTimeSpent = candidatesWithProgress.reduce((sum, c) => sum + c.total_time_spent, 0);
+
     // Calculate avg completion rate
     const totalProgress = candidatesWithProgress.reduce((sum, c) => sum + c.lectures_completed, 0);
     const avgCompletion = candidatesWithProgress.length > 0
@@ -111,6 +122,9 @@ export async function GET() {
         total_lectures: lectureCount,
         total_assignments: assignmentCount || 0,
         avg_completion_rate: avgCompletion,
+        active_last_7_days: activeLast7Days,
+        stalled_candidates: stalledCandidates,
+        total_time_spent: totalTimeSpent,
         candidates: candidatesWithProgress,
         recent_activities: recentActivities || [],
       },

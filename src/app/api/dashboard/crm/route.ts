@@ -85,6 +85,17 @@ export async function GET() {
       })
     );
 
+    const now = Date.now();
+    const activeLast7Days = othersWithProgress.filter((o) =>
+      o.last_active ? now - new Date(o.last_active).getTime() <= 7 * 24 * 60 * 60 * 1000 : false
+    ).length;
+
+    const stalledOthers = othersWithProgress.filter((o) =>
+      !o.last_active || now - new Date(o.last_active).getTime() > 14 * 24 * 60 * 60 * 1000
+    ).length;
+
+    const totalTimeSpent = othersWithProgress.reduce((sum, o) => sum + o.total_time_spent, 0);
+
     const totalProgress = othersWithProgress.reduce((sum, c) => sum + c.lectures_completed, 0);
     const avgCompletion = othersWithProgress.length > 0
       ? Math.round(totalProgress / othersWithProgress.length)
@@ -106,6 +117,9 @@ export async function GET() {
         total_lectures: lectureCount,
         total_assignments: assignmentCount || 0,
         avg_completion_rate: avgCompletion,
+        active_last_7_days: activeLast7Days,
+        stalled_others: stalledOthers,
+        total_time_spent: totalTimeSpent,
         others: othersWithProgress,
         recent_activities: recentActivities || [],
       },

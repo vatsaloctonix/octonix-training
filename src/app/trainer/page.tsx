@@ -42,6 +42,9 @@ interface DashboardData {
   total_lectures: number;
   total_assignments: number;
   avg_completion_rate: number;
+  active_last_7_days: number;
+  stalled_candidates: number;
+  total_time_spent: number;
   candidates: CandidateProgress[];
   recent_activities: ActivityLog[];
 }
@@ -55,6 +58,8 @@ interface ActivityLog {
 export default function TrainerDashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showAllActivity, setShowAllActivity] = useState(false);
+  const [showAllCandidates, setShowAllCandidates] = useState(false);
 
   useEffect(() => {
     fetchDashboard();
@@ -92,7 +97,11 @@ export default function TrainerDashboardPage() {
       <Header
         title="Trainer Studio"
         subtitle="Track momentum, manage learners, and ship content faster."
-        meta={[{ label: 'Time zone', value: 'ET' }]}
+        meta={[
+          { label: 'Time zone', value: 'ET' },
+          { label: 'Time spent', value: formatDuration(data?.total_time_spent || 0) },
+          { label: 'Active (7d)', value: String(data?.active_last_7_days || 0) },
+        ]}
         actions={(
           <ActionDock>
             <Link href="/trainer/candidates">
@@ -110,7 +119,7 @@ export default function TrainerDashboardPage() {
 
       <div className="p-6 space-y-6">
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
           <StatsCard
             title="Candidates"
             value={data?.total_candidates || 0}
@@ -137,6 +146,12 @@ export default function TrainerDashboardPage() {
             icon={ClipboardList}
             description={`Avg completion ${data?.avg_completion_rate || 0}%`}
           />
+          <StatsCard
+            title="Active (7d)"
+            value={data?.active_last_7_days || 0}
+            icon={Users}
+            description={`${data?.stalled_candidates || 0} stalled`}
+          />
         </div>
 
         {/* Candidates Progress */}
@@ -158,7 +173,7 @@ export default function TrainerDashboardPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data?.candidates?.map((candidate) => (
+                {(showAllCandidates ? data?.candidates : data?.candidates?.slice(0, 8))?.map((candidate) => (
                   <TableRow key={candidate.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
@@ -195,6 +210,16 @@ export default function TrainerDashboardPage() {
                 )}
               </TableBody>
             </Table>
+            {data?.candidates && data.candidates.length > 8 && (
+              <div className="px-6 py-4">
+                <button
+                  onClick={() => setShowAllCandidates((prev) => !prev)}
+                  className="text-sm text-blue-600 hover:text-blue-500"
+                >
+                  {showAllCandidates ? 'Show less' : 'Show more'}
+                </button>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -205,7 +230,7 @@ export default function TrainerDashboardPage() {
           />
           <CardContent>
             <div className="space-y-3">
-              {data?.recent_activities?.slice(0, 8).map((activity) => (
+              {(showAllActivity ? data?.recent_activities : data?.recent_activities?.slice(0, 6))?.map((activity) => (
                 <div
                   key={activity.id}
                   className="flex items-center justify-between border-b border-slate-200/70 pb-3 last:border-0 last:pb-0"
@@ -220,6 +245,14 @@ export default function TrainerDashboardPage() {
               ))}
               {(!data?.recent_activities || data.recent_activities.length === 0) && (
                 <p className="text-sm text-slate-500">No recent activity yet.</p>
+              )}
+              {data?.recent_activities && data.recent_activities.length > 6 && (
+                <button
+                  onClick={() => setShowAllActivity((prev) => !prev)}
+                  className="text-sm text-blue-600 hover:text-blue-500"
+                >
+                  {showAllActivity ? 'Show less' : 'Show more'}
+                </button>
               )}
             </div>
           </CardContent>
