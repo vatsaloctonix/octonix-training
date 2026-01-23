@@ -156,6 +156,55 @@ export default function OthersPage() {
     }
   };
 
+  const handleDelete = async (other: OtherUser) => {
+    if (!confirm(`Delete ${other.full_name}? This will remove the account permanently.`)) return;
+    try {
+      const res = await fetch(`/api/users/${other.id}`, { method: 'DELETE' });
+      const json = await res.json();
+      if (json.success) {
+        setOthers(others.filter((o) => o.id !== other.id));
+        setMessage({ type: 'success', text: 'Staff user deleted.' });
+      } else {
+        setMessage({ type: 'danger', text: json.error || 'Failed to delete staff user.' });
+      }
+    } catch {
+      setMessage({ type: 'danger', text: 'Failed to delete staff user.' });
+    }
+  };
+
+  const handleAccessHelp = async (other: OtherUser) => {
+    setMessage(null);
+    try {
+      if (!other.email) {
+        setMessage({ type: 'danger', text: 'No email on file for this user.' });
+        return;
+      }
+
+      if (other.password_set === false) {
+        const res = await fetch('/api/auth/invite', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: other.id }),
+        });
+        const json = await res.json();
+        if (!json.success) throw new Error(json.error);
+        setMessage({ type: 'success', text: 'Invite resent.' });
+        return;
+      }
+
+      const res = await fetch('/api/auth/forgot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: other.email }),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error);
+      setMessage({ type: 'success', text: 'Password reset code sent.' });
+    } catch {
+      setMessage({ type: 'danger', text: 'Failed to send access help.' });
+    }
+  };
+
   const resetForm = () => {
     setUsername('');
     setEmail('');
@@ -400,51 +449,3 @@ export default function OthersPage() {
     </div>
   );
 }
-  const handleDelete = async (other: OtherUser) => {
-    if (!confirm(`Delete ${other.full_name}? This will remove the account permanently.`)) return;
-    try {
-      const res = await fetch(`/api/users/${other.id}`, { method: 'DELETE' });
-      const json = await res.json();
-      if (json.success) {
-        setOthers(others.filter((o) => o.id !== other.id));
-        setMessage({ type: 'success', text: 'Staff user deleted.' });
-      } else {
-        setMessage({ type: 'danger', text: json.error || 'Failed to delete staff user.' });
-      }
-    } catch {
-      setMessage({ type: 'danger', text: 'Failed to delete staff user.' });
-    }
-  };
-
-  const handleAccessHelp = async (other: OtherUser) => {
-    setMessage(null);
-    try {
-      if (!other.email) {
-        setMessage({ type: 'danger', text: 'No email on file for this user.' });
-        return;
-      }
-
-      if (other.password_set === false) {
-        const res = await fetch('/api/auth/invite', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user_id: other.id }),
-        });
-        const json = await res.json();
-        if (!json.success) throw new Error(json.error);
-        setMessage({ type: 'success', text: 'Invite resent.' });
-        return;
-      }
-
-      const res = await fetch('/api/auth/forgot', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: other.email }),
-      });
-      const json = await res.json();
-      if (!json.success) throw new Error(json.error);
-      setMessage({ type: 'success', text: 'Password reset code sent.' });
-    } catch {
-      setMessage({ type: 'danger', text: 'Failed to send access help.' });
-    }
-  };
