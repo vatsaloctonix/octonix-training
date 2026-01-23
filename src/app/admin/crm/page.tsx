@@ -119,6 +119,55 @@ export default function CRMPage() {
     }
   };
 
+  const handleDelete = async (crm: CRMUser) => {
+    if (!confirm(`Delete ${crm.full_name}? This will remove the account permanently.`)) return;
+    try {
+      const res = await fetch(`/api/users/${crm.id}`, { method: 'DELETE' });
+      const json = await res.json();
+      if (json.success) {
+        setCrms(crms.filter((c) => c.id !== crm.id));
+        setMessage({ type: 'success', text: 'CRM user deleted.' });
+      } else {
+        setMessage({ type: 'danger', text: json.error || 'Failed to delete CRM user.' });
+      }
+    } catch {
+      setMessage({ type: 'danger', text: 'Failed to delete CRM user.' });
+    }
+  };
+
+  const handleAccessHelp = async (crm: CRMUser) => {
+    setMessage(null);
+    try {
+      if (!crm.email) {
+        setMessage({ type: 'danger', text: 'No email on file for this user.' });
+        return;
+      }
+
+      if (crm.password_set === false) {
+        const res = await fetch('/api/auth/invite', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: crm.id }),
+        });
+        const json = await res.json();
+        if (!json.success) throw new Error(json.error);
+        setMessage({ type: 'success', text: 'Invite resent.' });
+        return;
+      }
+
+      const res = await fetch('/api/auth/forgot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: crm.email }),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error);
+      setMessage({ type: 'success', text: 'Password reset code sent.' });
+    } catch {
+      setMessage({ type: 'danger', text: 'Failed to send access help.' });
+    }
+  };
+
   const resetForm = () => {
     setUsername('');
     setEmail('');
@@ -306,51 +355,3 @@ export default function CRMPage() {
     </div>
   );
 }
-  const handleDelete = async (crm: CRMUser) => {
-    if (!confirm(`Delete ${crm.full_name}? This will remove the account permanently.`)) return;
-    try {
-      const res = await fetch(`/api/users/${crm.id}`, { method: 'DELETE' });
-      const json = await res.json();
-      if (json.success) {
-        setCrms(crms.filter((c) => c.id !== crm.id));
-        setMessage({ type: 'success', text: 'CRM user deleted.' });
-      } else {
-        setMessage({ type: 'danger', text: json.error || 'Failed to delete CRM user.' });
-      }
-    } catch {
-      setMessage({ type: 'danger', text: 'Failed to delete CRM user.' });
-    }
-  };
-
-  const handleAccessHelp = async (crm: CRMUser) => {
-    setMessage(null);
-    try {
-      if (!crm.email) {
-        setMessage({ type: 'danger', text: 'No email on file for this user.' });
-        return;
-      }
-
-      if (crm.password_set === false) {
-        const res = await fetch('/api/auth/invite', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user_id: crm.id }),
-        });
-        const json = await res.json();
-        if (!json.success) throw new Error(json.error);
-        setMessage({ type: 'success', text: 'Invite resent.' });
-        return;
-      }
-
-      const res = await fetch('/api/auth/forgot', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: crm.email }),
-      });
-      const json = await res.json();
-      if (!json.success) throw new Error(json.error);
-      setMessage({ type: 'success', text: 'Password reset code sent.' });
-    } catch {
-      setMessage({ type: 'danger', text: 'Failed to send access help.' });
-    }
-  };
