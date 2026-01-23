@@ -16,7 +16,11 @@ export const metadata: Metadata = {
   title: 'Octonix Consulting | Training Platform',
   description: 'Training platform for trainers, candidates, and staff',
   icons: {
-    icon: '/icon.png',
+    icon: [
+      { url: '/icon.png', type: 'image/png', sizes: '64x64' },
+    ],
+    shortcut: '/icon.png',
+    apple: '/icon.png',
   },
 };
 
